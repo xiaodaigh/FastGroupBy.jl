@@ -1,5 +1,8 @@
+__precompile__(true)
 module FastGroupBy
 
-# package code goes here
+export meanby, column
+
+include("meanby.jl")
 
 end # module
