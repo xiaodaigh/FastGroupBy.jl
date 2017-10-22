@@ -1,8 +1,3 @@
-# FastGroupBy
-
-A benchmark on the only implemented function so far `meanby`
-
-```julia
 using FastGroupBy, DataFrames, IndexedTables, IterableTables
 import DataFrames.DataFrame
 
@@ -37,4 +32,3 @@ srand(1)
 @time DataFrames.aggregate(idtdf, :id, mean)
 @time meanby(idtdf, :id, :val)
 @time meanby(idtdf, :id, :val)
-```
