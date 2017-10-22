@@ -1,7 +1,10 @@
 using IndexedTables
 import DataFrames.DataFrame
 import DataFrames.AbstractDataFrame
+import IndexedTables.IndexedTable
 import Base.ht_keyindex
+import IndexedTables.column
+import PooledArrays.PooledArray
 
 function meanby{S,T}(id4::AbstractArray{T,1}, v1::AbstractArray{S,1})::Dict{T,Float64}
   res = Dict{T, Tuple{S, Int64}}()
@@ -20,11 +23,40 @@ function meanby{S,T}(id4::AbstractArray{T,1}, v1::AbstractArray{S,1})::Dict{T,Fl
   return Dict(k => res[k][1]/res[k][2] for k in keys(res))
 end
 
-meanby(dt::IndexedTables.IndexedTable,by::Symbol, val::Symbol) = meanby(column(dt,by), column(dt,val))
-meanby(dt::AbstractDataFrame,by::Symbol, val::Symbol) = meanby(column(dt,by), column(dt,val))
+meanby(dt::Union{IndexedTable,AbstractDataFrame},by::Symbol, val::Symbol) = meanby(column(dt,by), column(dt,val))
 
-import IndexedTables.column
 function column(dt::AbstractDataFrame, col::Symbol)
   i = dt.colindex.lookup[col]
   dt.columns[i]
 end
+
+function sumby{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1})
+  res = Dict{T, S}()
+  szero = zero(S)
+  for (byi, vali) in zip(by, val)
+    index = ht_keyindex(res, byi)
+    if index > 0
+      @inbounds vw = res.vals[index]
+      new_vw = vw + vali
+      @inbounds res.vals[index] = new_vw
+    else
+      @inbounds res[byi] = vali
+    end
+
+  end
+  return res
+end
+
+#Optimized sumby for PooledArrays
+function sumby{S}(by::PooledArray, val::AbstractArray{S,1})
+  l = length(by.pool)
+  res = zeros(S, l)
+  refs = Int64.(by.refs)
+
+  for (i, v) in zip(refs, val)
+    res[i] += v
+  end
+  return Dict(by.pool[i] => res[i] for i in 1:l)
+end
+
+sumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = sumby(column(dt,by), column(dt,val))
