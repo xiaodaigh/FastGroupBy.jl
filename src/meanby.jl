@@ -5,6 +5,7 @@ import IndexedTables.IndexedTable
 import Base.ht_keyindex
 import IndexedTables.column
 import PooledArrays.PooledArray
+# using ParallelAccelerator
 
 function meanby{S,T}(id4::AbstractArray{T,1}, v1::AbstractArray{S,1})::Dict{T,Float64}
   res = Dict{T, Tuple{S, Int64}}()
@@ -21,6 +22,20 @@ function meanby{S,T}(id4::AbstractArray{T,1}, v1::AbstractArray{S,1})::Dict{T,Fl
 
   end
   return Dict(k => res[k][1]/res[k][2] for k in keys(res))
+end
+
+#Optimized sumby for PooledArrays
+function meanby{S}(by::PooledArray, val::AbstractArray{S,1})
+  l = length(by.pool)
+  res = zeros(S, l)
+  wt = zeros(Int64, l)
+  refs = Int64.(by.refs)
+
+  for (i, v) in zip(refs, val)
+    res[i] += v
+    wt[i] += 1
+  end
+  return Dict(by.pool[i] => res[i]/wt[i] for i in 1:l)
 end
 
 meanby(dt::Union{IndexedTable,AbstractDataFrame},by::Symbol, val::Symbol) = meanby(column(dt,by), column(dt,val))
@@ -58,5 +73,16 @@ function sumby{S}(by::PooledArray, val::AbstractArray{S,1})
   end
   return Dict(by.pool[i] => res[i] for i in 1:l)
 end
+
+# @acc function sumby_acc{S}(by::PooledArray, val::AbstractArray{S,1})
+#   l = length(by.pool)
+#   res = zeros(S, l)
+#   refs = Int64.(by.refs)
+#
+#   for (i, v) in zip(refs, val)
+#     res[i] += v
+#   end
+#   return Dict(by.pool[i] => res[i] for i in 1:l)
+# end
 
 sumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = sumby(column(dt,by), column(dt,val))
