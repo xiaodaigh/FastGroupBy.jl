@@ -94,7 +94,7 @@ function psumby{T,S}(by::SharedArray{T,1}, val::SharedArray{S,1})
     throw(ErrorException("only one proc"))
   end
   l = length(by)
-  chunks = collect(Set([1:Int64(round(l/nprocs())):l...,l]))
+  chunks = sort(collect(Set([1:Int64(round(l/nprocs())):l...,l])))
   ll =length(chunks)
   res = pmap(2:ll) do i
     j = Int64(chunks[i-1]):Int64(chunks[i])
@@ -116,29 +116,30 @@ end
 
 psumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = psumby(column(dt,by), column(dt,val))
 
-function pmeanby{T,S}(by::SharedArray{T,1}, val::SharedArray{S,1})
-  np = nprocs()
-  if np == 1
-    throw(ErrorException("only one proc"))
-  end
-  l = length(by)
-  chunks = collect(Set([1:Int64(round(l/nprocs())):l...,l]))
-  ll =length(chunks)
-  res = pmap(2:ll) do i
-    j = Int64(chunks[i-1]):Int64(chunks[i])
-    meanby(by[j], val[j])
-  end
-  return res
-end
+# function pmeanby{T,S}(by::SharedArray{T,1}, val::SharedArray{S,1})
+#   np = nprocs()
+#   if np == 1
+#     throw(ErrorException("only one proc"))
+#   end
+#   l = length(by)
+#   chunks = sort(collect(Set([1:Int64(round(l/nprocs())):l...,l])))
+#
+#   ll =length(chunks)
+#   res = pmap(2:ll) do i
+#     j = Int64(chunks[i-1]):Int64(chunks[i])
+#     meanby(by[j], val[j])
+#   end
+#   return res
+# end
+#
+# function pmeanby{S}(by::Union{PooledArray, CategoricalArray}, val::Vector{S})
+#   meanby(by, val)
+# end
+#
+# function pmeanby{T,S}(by::Vector{T}, val::Vector{S})
+#   bys = SharedArray(by)
+#   vals = SharedArray(val)
+#   pmeanby(bys, vals)
+# end
 
-function pmeanby{S}(by::Union{PooledArray, CategoricalArray}, val::Vector{S})
-  meanby(by, val)
-end
-
-function pmeanby{T,S}(by::Vector{T}, val::Vector{S})
-  bys = SharedArray(by)
-  vals = SharedArray(val)
-  pmeanby(bys, vals)
-end
-
-pmeanby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = pmeanby(column(dt,by), column(dt,val))
+# pmeanby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = pmeanby(column(dt,by), column(dt,val))
