@@ -1,14 +1,8 @@
 import DataFrames.DataFrame
 import IndexedTables.IndexedTable
 
-function select(cols)
-  return function(df::Union{AbstractDataFrame,IndexedTables})
-    column(cols)
-  end
-end
-
-function select(cols...)
-  return function(df::Union{AbstractDataFrame,IndexedTables})
-    columns(cols...)
+function select(cols::Symbol)
+  return function(df::Union{AbstractDataFrame,IndexedTable})
+    column(df, cols)
   end
 end
