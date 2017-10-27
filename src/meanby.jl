@@ -64,25 +64,6 @@ function sumby{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1})
   return res
 end
 
-function sumby_htsize{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1}, htsize)
-  res = Dict{T, S}()
-  # resize the Dict to a larger size
-  rehash!(res, htsize)
-  szero = zero(S)
-  for (byi, vali) in zip(by, val)
-    index = ht_keyindex(res, byi)
-    if index > 0
-      @inbounds vw = res.vals[index]
-      new_vw = vw + vali
-      @inbounds res.vals[index] = new_vw
-    else
-      @inbounds res[byi] = vali
-    end
-
-  end
-  return res
-end
-
 #Optimized sumby for PooledArrays
 function sumby{S}(by::Union{PooledArray, CategoricalArray}, val::AbstractArray{S,1})
   l = length(by.pool)
