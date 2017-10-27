@@ -3,6 +3,7 @@ import DataFrames.DataFrame
 import DataFrames.AbstractDataFrame
 import IndexedTables.IndexedTable
 import Base.ht_keyindex
+import Base.rehash!
 import IndexedTables.column
 import PooledArrays.PooledArray
 import CategoricalArrays.CategoricalArray
@@ -48,6 +49,25 @@ end
 
 function sumby{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1})
   res = Dict{T, S}()
+  # resize the Dict to a larger size
+  for (byi, vali) in zip(by, val)
+    index = ht_keyindex(res, byi)
+    if index > 0
+      @inbounds vw = res.vals[index]
+      new_vw = vw + vali
+      @inbounds res.vals[index] = new_vw
+    else
+      @inbounds res[byi] = vali
+    end
+
+  end
+  return res
+end
+
+function sumby_htsize{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1}, htsize)
+  res = Dict{T, S}()
+  # resize the Dict to a larger size
+  rehash!(res, htsize)
   szero = zero(S)
   for (byi, vali) in zip(by, val)
     index = ht_keyindex(res, byi)

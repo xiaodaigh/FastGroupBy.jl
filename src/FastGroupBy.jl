@@ -1,7 +1,9 @@
 __precompile__(true)
 module FastGroupBy
 
-export meanby, column, sumby, pmeanby, psumby, select, pgroupreduce, dict_add_reduce, dict_mean_reduce
+export meanby, column, sumby, pmeanby, psumby, select, pgroupreduce
+export dict_add_reduce, dict_mean_reduce
+export sumby_htsize
 
 include("meanby.jl")
 include("select.jl")
