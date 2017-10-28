@@ -24,6 +24,9 @@ function dict_mean_reduce(local_res)
 end
 
 function pgroupreduce{T}(byfn, map, local_reduce, master_reduce, by::SharedArray{T,1}, val::SharedArray{T,1})
+  if nprocs()==1
+    throw(ErrorException("Only 1 worker; use groupreduce instead"))
+  end
   l = length(by)
   ii = sort(collect(Set([1:Int64(round(l/nprocs())):l...,l])))
   res = pmap(2:length(ii)) do i
