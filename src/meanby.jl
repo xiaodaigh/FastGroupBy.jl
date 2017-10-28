@@ -53,13 +53,10 @@ function sumby{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1})
   for (byi, vali) in zip(by, val)
     index = ht_keyindex(res, byi)
     if index > 0
-      @inbounds vw = res.vals[index]
-      new_vw = vw + vali
-      @inbounds res.vals[index] = new_vw
+      @inbounds  res.vals[index] += vali
     else
       @inbounds res[byi] = vali
     end
-
   end
   return res
 end
@@ -101,7 +98,17 @@ function psumby{T,S}(by::SharedArray{T,1}, val::SharedArray{S,1})
     j = Int64(chunks[i-1]):Int64(chunks[i])
     sumby(by[j], val[j])
   end
-  return res
+
+  # algorithms to collate all dicts
+  fnl_res = res[1]
+  szero = zero(S)
+  for i = 2:length(res)
+    next_res = res[i]
+    for k = keys(next_res)
+      fnl_res[k] = get(fnl_res, k, szero) + next_res[k]
+    end
+  end
+  fnl_res
 end
 
 function psumby{S}(by::Union{PooledArray, CategoricalArray}, val::Vector{S})
