@@ -2,13 +2,6 @@
 #  Split - Apply - Combine - sumby operations
 #
 
-using SortingAlgorithms, Base.Order, Compat, IndexedTables
-import Base: ht_keyindex, rehash!
-import SortingAlgorithms: uint_mapping, RADIX_SIZE, RADIX_MASK
-import DataFrames: DataFrame, AbstractDataFrame
-import IndexedTables: IndexedTable, column
-import PooledArrays.PooledArray
-import CategoricalArrays.CategoricalArray
 
 ##############################################################################
 ##
@@ -56,7 +49,7 @@ srand(1)
 
 ```
 """
-function sumby{T,S}(by::AbstractVector{T},  val::AbstractVector{S})
+function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})
   by_sim = similar(by)
   val1=similar(val)
   o = Forward
@@ -129,7 +122,7 @@ function sumby{T,S}(by::AbstractVector{T},  val::AbstractVector{S})
   sumby_sorted(by, val)
 end
 
-function sumby_sorted{T,S}(by_sorted::AbstractVector{T},  val::AbstractVector{S})
+function sumby_sorted{T, S<:Number}(by_sorted::AbstractVector{T},  val::AbstractVector{S})
   res = Dict{T,S}()
   @inbounds tmp_val = val[1]
   @inbounds last_byi = by_sorted[1]
@@ -170,7 +163,7 @@ end
 # end
 
 
-function sumby_dict{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1})
+function sumby_dict{T,S<:Number}(by::AbstractVector{T}, val::AbstractVector{S})
   res = Dict{T, S}()
   # resize the Dict to a larger size
   for (byi, vali) in zip(by, val)
@@ -185,20 +178,21 @@ function sumby_dict{T,S}(by::AbstractArray{T,1}, val::AbstractArray{S,1})
 end
 
 #Optimized sumby for PooledArrays
-function sumby{S}(by::Union{PooledArray, CategoricalArray}, val::AbstractArray{S,1})
+function sumby{S<:Number}(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S})
   l = length(by.pool)
   res = zeros(S, l)
-  refs = Int64.(by.refs)
+  #refs = Int64.(by.refs)
+  refs = by.refs
 
   for (i, v) in zip(refs, val)
     @inbounds res[i] += v
   end
-  return Dict(by.pool[i] => res[i] for i in 1:l)
+  return Dict(by.pool[i] => res[i] for i in S(1):S(l))
 end
 
 sumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = sumby(column(dt,by), column(dt,val))
 
-function psumby{T,S}(by::SharedArray{T,1}, val::SharedArray{S,1})
+function psumby{T,S<:Number}(by::SharedArray{T,1}, val::SharedArray{S,1})
   np = nprocs()
   if np == 1
     throw(ErrorException("only one proc"))
@@ -223,11 +217,11 @@ function psumby{T,S}(by::SharedArray{T,1}, val::SharedArray{S,1})
   fnl_res
 end
 
-function psumby{S}(by::Union{PooledArray, CategoricalArray}, val::Vector{S})
+function psumby{S<:Number}(by::Union{PooledArray, CategoricalArray}, val::Vector{S})
   return sumby(by, val)
 end
 
-function psumby{T,S}(by::Vector{T}, val::Vector{S})
+function psumby{T,S<:Number}(by::Vector{T}, val::Vector{S})
   bys = SharedArray(by)
   vals = SharedArray(val)
   return psumby(bys, vals)

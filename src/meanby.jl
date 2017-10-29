@@ -1,13 +1,4 @@
-using SortingAlgorithms, Base.Order, Compat, IndexedTables
-import Base: ht_keyindex, rehash!
-import SortingAlgorithms: uint_mapping, RADIX_SIZE, RADIX_MASK
-import DataFrames: DataFrame, AbstractDataFrame
-import IndexedTables: IndexedTable, column
-import PooledArrays.PooledArray
-import CategoricalArrays.CategoricalArray
-# using ParallelAccelerator
-
-function meanby{S,T}(id4::AbstractArray{T,1}, v1::AbstractArray{S,1})::Dict{T,Float64}
+function meanby{S,T}(id4::AbstractArray{T,1}, v1::AbstractArray{S,1})
   res = Dict{T, Tuple{S, Int64}}()
   szero = zero(S)
   for (id, val) in zip(id4,v1)

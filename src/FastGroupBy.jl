@@ -1,6 +1,19 @@
 __precompile__(true)
 module FastGroupBy
 
+using SortingAlgorithms, Base.Order, Compat, IndexedTables, DataFrames
+import Base: ht_keyindex, rehash!
+import SortingAlgorithms: uint_mapping, RADIX_SIZE, RADIX_MASK
+import DataFrames: DataFrame, AbstractDataFrame
+import IndexedTables: IndexedTable, column
+import PooledArrays.PooledArray
+import CategoricalArrays.CategoricalArray
+import SplitApplyCombine.groupreduce
+
+
+# using DataBench
+# using ParallelAccelerator
+
 ##############################################################################
 ##
 ## Dependencies
