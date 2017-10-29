@@ -1,6 +1,6 @@
 The FastGroupBy.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2017: susabi.
+> Copyright (c) 2017: Zhuo Jia Dai
 >
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy
