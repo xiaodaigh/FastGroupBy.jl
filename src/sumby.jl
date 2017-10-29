@@ -167,11 +167,15 @@ function sumby_dict{T,S<:Number}(by::AbstractVector{T}, val::AbstractVector{S})
   res = Dict{T, S}()
   # resize the Dict to a larger size
   for (byi, vali) in zip(by, val)
-    index = ht_keyindex(res, byi)
+    index = ht_keyindex2(res, byi)
     if index > 0
-      @inbounds  res.vals[index] += vali
+      #@inbounds  res.vals[index] += vali
+      res.age += 1
+      @inbounds res.keys[index] = byi
+      @inbounds res.vals[index] += vali
     else
-      @inbounds res[byi] = vali
+      # @inbounds res[byi] = vali
+      @inbounds _setindex!(res, vali, byi, -index)
     end
   end
   return res
