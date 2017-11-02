@@ -3,6 +3,12 @@
 Fast algorithms for doing group-by. Currently only `sumby` is implemented
 
 ```julia
+# install SplitApplyCombine.jl
+Pkg.clone("https://github.com/JuliaData/SplitApplyCombine.jl.git") 
+
+# install FastGroupBy.jl
+Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
+
 @time using FastGroupBy
 @time using DataFrames, IndexedTables, IterableTables
 @time import DataFrames.DataFrame
