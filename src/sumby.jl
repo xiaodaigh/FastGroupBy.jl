@@ -202,18 +202,23 @@ function psumby{T,S<:Number}(by::SharedArray{T,1}, val::SharedArray{S,1})
     throw(ErrorException("only one proc"))
   end
   l = length(by)
-  chunks = sort(collect(Set([1:Int64(round(l/nprocs())):l...,l])))
-  ll =length(chunks)
-  res = pmap(2:ll) do i
-    j = Int64(chunks[i-1]):Int64(chunks[i])
-    sumby_dict(by[j], val[j])
-  end
+  res = [@spawnat k sumby_res = sumby(by[localindexes(by)], val[localindexes(val)]) for k = 2:np]
+
+  # ress = pmap(res) do res1
+  #   next_res = fetch(res1)
+  #   szero = zero(S)
+  #   for k = keys(next_res)
+  #     sumby_res[k] = get(sumby_res, k, szero) + next_res[k]
+  #   end
+  #   sumby_res
+  # end
 
   # algorithms to collate all dicts
-  fnl_res = res[1]
+  
+  fnl_res = fetch(res[1])
   szero = zero(S)
   for i = 2:length(res)
-    next_res = res[i]
+    next_res = fetch(res[i])
     for k = keys(next_res)
       fnl_res[k] = get(fnl_res, k, szero) + next_res[k]
     end
