@@ -49,80 +49,80 @@ srand(1)
 
 ```
 """
-#function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})
-by_sim = similar(by)
-val1=similar(val)
-o = Forward
-lo = 1
-hi = length(by)
+function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})
+  by_sim = similar(by)
+  val1=similar(val)
+  o = Forward
+  lo = 1
+  hi = length(by)
 
-if lo >= hi;  return by;  end
+  if lo >= hi;  return by;  end
 
-# Make sure we're sorting a bits type
-#TT = Base.Order.ordtype(o, by)
-if !isbits(T)
-  error("Radix sort only sorts bits types (got $T)")
-end
-
-# Init
-iters = ceil(Integer, sizeof(T)*8/RADIX_SIZE)
-bin = zeros(UInt32, 2^RADIX_SIZE, iters)
-if lo > 1;  bin[1,:] = lo-1;  end
-
-# Histogram for each element, radix
-for i = lo:hi
-  v = uint_mapping(o, by[i])
-  for j = 1:iters
-      idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
-      @inbounds bin[idx,j] += 1
+  # Make sure we're sorting a bits type
+  #TT = Base.Order.ordtype(o, by)
+  if !isbits(T)
+    error("Radix sort only sorts bits types (got $T)")
   end
-end
 
-# Sort!
-swaps = 0
-len = hi-lo+1
-for j = 1:iters
-# Unroll first data iteration, check for degenerate case
-v = uint_mapping(o, by[hi])
-idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+  # Init
+  iters = ceil(Integer, sizeof(T)*8/RADIX_SIZE)
+  bin = zeros(UInt32, 2^RADIX_SIZE, iters)
+  if lo > 1;  bin[1,:] = lo-1;  end
 
-# are all values the same at this radix?
-if bin[idx,j] == len;  continue;  end
-
-cbin = cumsum(bin[:,j])
-ci = cbin[idx]
-by_sim[ci] = by[hi]
-val1[ci] = val[hi]
-
-cbin[idx] -= 1
-
-# Finish the loop...
-@inbounds for i in hi-1:-1:lo
+  # Histogram for each element, radix
+  for i = lo:hi
     v = uint_mapping(o, by[i])
-    idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
-    ci = cbin[idx]
-    by_sim[ci] = by[i]
-    val1[ci] = val[i]
-    cbin[idx] -= 1
-end
-by,by_sim = by_sim,by
-val,val1 = val1,val
-swaps += 1
+    for j = 1:iters
+        idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+        @inbounds bin[idx,j] += 1
+    end
+  end
+
+  # Sort!
+  swaps = 0
+  len = hi-lo+1
+  for j = 1:iters
+  # Unroll first data iteration, check for degenerate case
+  v = uint_mapping(o, by[hi])
+  idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+
+  # are all values the same at this radix?
+  if bin[idx,j] == len;  continue;  end
+
+  cbin = cumsum(bin[:,j])
+  ci = cbin[idx]
+  by_sim[ci] = by[hi]
+  val1[ci] = val[hi]
+
+  cbin[idx] -= 1
+
+  # Finish the loop...
+  @inbounds for i in hi-1:-1:lo
+      v = uint_mapping(o, by[i])
+      idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+      ci = cbin[idx]
+      by_sim[ci] = by[i]
+      val1[ci] = val[i]
+      cbin[idx] -= 1
+  end
+  by,by_sim = by_sim,by
+  val,val1 = val1,val
+  swaps += 1
+  end
+
+  @inbounds if isodd(swaps)
+  by,by_sim = by_sim,by
+  val,val1 = val1,val
+  for i = lo:hi
+      by[i] = by_sim[i]
+      val[i] = val1[i]
+  end
+  end
+
+  sumby_contiguous(by, val)
 end
 
-@inbounds if isodd(swaps)
-by,by_sim = by_sim,by
-val,val1 = val1,val
-for i = lo:hi
-    by[i] = by_sim[i]
-    val[i] = val1[i]
-end
-end
-
-sumby_sorted(by, val)
-#end
-
-function sumby_sorted{T, S<:Number}(by_sorted::AbstractVector{T},  val::AbstractVector{S})
+function sumby_contiguous{T, S<:Number}(by_sorted::AbstractVector{T},  val::AbstractVector{S})
   res = Dict{T,S}()
   @inbounds tmp_val = val[1]
   @inbounds last_byi = by_sorted[1]
@@ -141,8 +141,8 @@ function sumby_sorted{T, S<:Number}(by_sorted::AbstractVector{T},  val::Abstract
   res
 end
 
-#sumby_sorted2 is too slow
-# function sumby_sorted2{T,S}(by_sorted::AbstractVector{T},  val::AbstractVector{S})
+#sumby_contiguous2 is too slow
+# function sumby_contiguous2{T,S}(by_sorted::AbstractVector{T},  val::AbstractVector{S})
 #   res = Dict{T,S}()
 #   @inbounds last_byi = by_sorted[1]
 #   lo = 1
