@@ -2,7 +2,14 @@ using FastGroupBy, Compat
 import Base.Forward
 import SortingAlgorithms: RADIX_MASK, RADIX_SIZE, uint_mapping
 
-function sumby_lessmem{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})
+"""
+sumby that uses much less memory but is slower
+
+It saves memory by not creating a separate copy of by and val vectors but instead
+follows a chain of assignment for the swap operations.
+
+"""
+function sumby_lessmem_chain{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})
   o = Forward
   lo = 1
   hi = length(by)
@@ -54,11 +61,11 @@ function sumby_lessmem{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector
               by[ci], val[ci] = tmp[1], tmp[2]
               tmp = new_tmp
               touched[ci] = true # keep track of which number is done
+              cbin[idx] -= 1
+
               if ci == begin_index # the chain has ended
                   break;
               end
-              cbin[idx] -= 1
-
               v = uint_mapping(o, tmp[1])
               idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
           end
@@ -71,5 +78,3 @@ function sumby_lessmem{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector
 
   sumby_contiguous(by, val)
 end
-
-sumby_lessmem([1:10...],[1:10...])
