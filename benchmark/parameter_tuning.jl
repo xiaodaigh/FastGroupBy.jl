@@ -5,7 +5,7 @@ using FastGroupBy
 using Base.Threads
 K = 100
 
-tries = vcat([Int(2^k-1) for k = 31:31], 3_000_000_000)
+tries = vcat([Int(2^k-1) for k = 7:31], 3_000_000_000)
 for N in tries
     println(N)
     if N < 400_000
