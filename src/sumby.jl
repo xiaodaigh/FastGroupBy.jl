@@ -50,8 +50,16 @@ srand(1)
 ```
 """
 function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
-    if issorted(by) then
+    length(by) == length(val) && throw(ErrorException("length of by and val must be the same"))
+
+    if length(by) == 0
+        return Dict{T,S}()
+    elseif length(by) == 1
+        return Dict{T,S}(by[1], val[1])
+    elseif issorted(by)
         return sumby_contiguous(by, val)
+    elseif nthreads() > 1
+        return sumby_multi_rs(by, val)
     end
 
     l = length(by)
@@ -118,8 +126,8 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
                 # are all values the same at this radix?
                 if bin[idx] == len
                     nextranges = vcat(nextranges, [(lo, hi)])::Array{Tuple{Int, Int}}
-                    by_sim[lo:hi] = by[lo:hi]
-                    val1[lo:hi] = val[lo:hi]
+                    @inbounds by_sim[lo:hi] = by[lo:hi]
+                    @inbounds val1[lo:hi] = val[lo:hi]
                 else
                     if lo > 1;  bin[1] += UInt32(lo-1);  end
                     cbin = cumsum(bin)
@@ -152,11 +160,11 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
             end
             if length(new_small_grps) > 0
                 for (lo_nsg, hi_nsg) in new_small_grps
-                    bytmp = by_sim[lo_nsg:hi_nsg]
+                    @inbounds bytmp = by_sim[lo_nsg:hi_nsg]
                     sp = sortperm(bytmp)
 
-                    by[lo_nsg:hi_nsg] = bytmp[sp]
-                    val[lo_nsg:hi_nsg] = val1[lo_nsg:hi_nsg][sp]
+                    @inbounds by[lo_nsg:hi_nsg] = bytmp[sp]
+                    @inbounds val[lo_nsg:hi_nsg] = val1[lo_nsg:hi_nsg][sp]
                 end
                 new_small_grps = Int[]
             end

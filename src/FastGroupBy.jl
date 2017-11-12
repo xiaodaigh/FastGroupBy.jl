@@ -31,6 +31,7 @@ export meanby, column, sumby, pmeanby, psumby, select, pgroupreduce
 export dict_add_reduce, dict_mean_reduce
 export sumby_htsize, sumby_contiguous, sumby_dict, sumby_radixgroup
 export sumby_radixsort, sumby_sortperm, sumby_lessmem_chain, sumby
+export sumby_multi_rs
 
 ##############################################################################
 ##
@@ -40,6 +41,7 @@ export sumby_radixsort, sumby_sortperm, sumby_lessmem_chain, sumby
 
 include("meanby.jl")
 include("sumby.jl")
+include("sumby_multithreaded.jl")
 include("sumby_lessmem_chain.jl")
 include("util.jl")
 include("pgroupreduce.jl")
