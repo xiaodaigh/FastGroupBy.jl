@@ -49,7 +49,23 @@ srand(1)
 
 ```
 """
-function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)
+function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+    if issorted(by) then
+        return sumby_contiguous(by, val)
+    end
+
+    l = length(by)
+    if l <= 400_000
+        return sumby_sortperm(by, val)
+    elseif l <= 50_000_000
+        return sumby_radixsort(by, val)
+    else
+        return sumby_radixgroup(by, val)
+    end
+end
+
+"sumby by using radix and coutning sort to group by; it's only a partial sort. It's faster for large by"
+function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)::Dict{T,S}
     by_sim = similar(by)
     val1=similar(val)
     o = Forward
@@ -152,8 +168,8 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; cut
     return sumby_contiguous(by, val)
 end
 
-
-function sumby_radix{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+"sumby by sorting the by column"
+function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
   by_sim = similar(by)
   val1=similar(val)
   o = Forward
@@ -227,6 +243,7 @@ function sumby_radix{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S
   sumby_contiguous(by, val)
 end
 
+"sumby assuming that the elements are organised contiguously it does not perform a check"
 function sumby_contiguous{T, S<:Number}(by_sorted::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
   res = Dict{T,S}()
   @inbounds tmp_val = val[1]
@@ -267,7 +284,17 @@ end
 #   res
 # end
 
+"This is faster for smaller by and also doesn't change the input"
+function sumby_sortperm{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+    sp = sortperm(by)
+    sumby_contiguous(view(by, sp), view(val,sp))
+end
+# function sumby_sortperm2{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+#     sp = sortperm(by)
+#     sumby_contiguous(by[sp], val[sp])
+# end
 
+"sumby using Dict - can be quite slow due to slow hash table operations"
 function sumby_dict{T,S<:Number}(by::AbstractVector{T}, val::AbstractVector{S})::Dict{T,S}
   res = Dict{T, S}()
   # resize the Dict to a larger size

@@ -29,7 +29,8 @@ import SplitApplyCombine.groupreduce
 
 export meanby, column, sumby, pmeanby, psumby, select, pgroupreduce
 export dict_add_reduce, dict_mean_reduce
-export sumby_htsize, sumby_contiguous, sumby_dict
+export sumby_htsize, sumby_contiguous, sumby_dict, sumby_radixgroup
+export sumby_radixsort, sumby_sortperm, sumby_lessmem_chain, sumby
 
 ##############################################################################
 ##
@@ -39,6 +40,7 @@ export sumby_htsize, sumby_contiguous, sumby_dict
 
 include("meanby.jl")
 include("sumby.jl")
+include("sumby_lessmem_chain.jl")
 include("util.jl")
 include("pgroupreduce.jl")
 
