@@ -50,9 +50,11 @@ srand(1)
 ```
 """
 function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
-    length(by) == length(val) && throw(ErrorException("length of by and val must be the same"))
+    l = length(by)
 
-    if length(by) == 0
+    l == length(val) && throw(ErrorException("length of by and val must be the same"))
+
+    if l == 0
         return Dict{T,S}()
     elseif length(by) == 1
         return Dict{T,S}(by[1], val[1])
@@ -62,13 +64,13 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Di
         return sumby_multi_rs(by, val)
     end
 
-    l = length(by)
-    if l <= 400_000
+    if l <= 2^16
         return sumby_sortperm(by, val)
     elseif l <= 50_000_000
         return sumby_radixsort(by, val)
     else
-        return sumby_radixgroup(by, val)
+        # return sumby_radixgroup(by, val)
+        return sumby_radixsort(by, val)
     end
 end
 
@@ -111,8 +113,8 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
 
                 # Histogram for each element, radix
                 for i = lo:hi
-                    v = uint_mapping(o, by[i])
-                    idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+                    #v = uint_mapping(o, by[i])
+                    idx = @compat(Int((by[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
                     @inbounds bin[idx] += 1
                 end
 
@@ -120,8 +122,8 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
                 len = hi - lo + 1
 
                 # Unroll first data iteration, check for degenerate case
-                v = uint_mapping(o, by[hi])
-                idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+                #v = uint_mapping(o, by[hi])
+                idx = @compat(Int((by[hi] >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
 
                 # are all values the same at this radix?
                 if bin[idx] == len
@@ -149,8 +151,8 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
 
                     # Finish the loop...
                     @inbounds for i in hi-1:-1:lo
-                      v = uint_mapping(o, by[i])
-                      idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+                      #v = uint_mapping(o, by[i])
+                      idx = @compat(Int((by[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
                       ci = cbin[idx]
                       by_sim[ci] = by[i]
                       val1[ci] = val[i]
@@ -162,9 +164,12 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
                 for (lo_nsg, hi_nsg) in new_small_grps
                     @inbounds bytmp = by_sim[lo_nsg:hi_nsg]
                     sp = sortperm(bytmp)
-
-                    @inbounds by[lo_nsg:hi_nsg] = bytmp[sp]
-                    @inbounds val[lo_nsg:hi_nsg] = val1[lo_nsg:hi_nsg][sp]
+                    bytmp_sorted = bytmp[sp]
+                    val1_sorted = val1[lo_nsg:hi_nsg][sp]
+                    @inbounds by[lo_nsg:hi_nsg] = bytmp_sorted
+                    @inbounds val[lo_nsg:hi_nsg] = val1_sorted
+                    @inbounds by_sim[lo_nsg:hi_nsg] = bytmp_sorted
+                    @inbounds val1[lo_nsg:hi_nsg] = val1_sorted
                 end
                 new_small_grps = Int[]
             end
@@ -180,7 +185,6 @@ end
 function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
   by_sim = similar(by)
   val1=similar(val)
-  o = Forward
   lo = 1
   hi = length(by)
 
@@ -200,53 +204,53 @@ function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVect
 
   # Histogram for each element, radix
   for i = lo:hi
-    v = uint_mapping(o, by[i])
+    v = by[i]
     for j = 1:iters
-        idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+        idx = Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
         @inbounds bin[idx,j] += 1
     end
   end
 
   # Sort!
-  swaps = 0
+  # swaps = 0
   len = hi-lo+1
   for j = 1:iters
-  # Unroll first data iteration, check for degenerate case
-  v = uint_mapping(o, by[hi])
-  idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+      # Unroll first data iteration, check for degenerate case
+      v = by[hi]
+      idx = Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
 
-  # are all values the same at this radix?
-  if bin[idx,j] == len;  continue;  end
+      # are all values the same at this radix?
+      if bin[idx,j] == len;  continue;  end
 
-  cbin = cumsum(bin[:,j])
-  ci = cbin[idx]
-  by_sim[ci] = by[hi]
-  val1[ci] = val[hi]
-
-  cbin[idx] -= 1
-
-  # Finish the loop...
-  @inbounds for i in hi-1:-1:lo
-      v = uint_mapping(o, by[i])
-      idx = @compat(Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+      cbin = cumsum(bin[:,j])
       ci = cbin[idx]
-      by_sim[ci] = by[i]
-      val1[ci] = val[i]
+      by_sim[ci] = by[hi]
+      val1[ci] = val[hi]
+
       cbin[idx] -= 1
-  end
-  by,by_sim = by_sim,by
-  val,val1 = val1,val
-  swaps += 1
+
+      # Finish the loop...
+      @inbounds for i in hi-1:-1:lo
+          v = by[i]
+          idx =Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+          ci = cbin[idx]
+          by_sim[ci] = by[i]
+          val1[ci] = val[i]
+          cbin[idx] -= 1
+      end
+      by,by_sim = by_sim,by
+      val,val1 = val1,val
+    #   swaps += 1
   end
 
-  @inbounds if isodd(swaps)
-  by,by_sim = by_sim,by
-  val,val1 = val1,val
-  for i = lo:hi
-      by[i] = by_sim[i]
-      val[i] = val1[i]
-  end
-  end
+  # @inbounds if isodd(swaps)
+  #   by,by_sim = by_sim,by
+  #   val,val1 = val1,val
+  #   for i = lo:hi
+  #     by[i] = by_sim[i]
+  #     val[i] = val1[i]
+  #   end
+  # end
 
   sumby_contiguous(by, val)
 end
