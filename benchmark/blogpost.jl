@@ -6,15 +6,39 @@ using FastGroupBy, PooledArrays
 import PooledArrays.PooledArray
 
 #const N = Int(2e9/8)
-const N = 250_000_000
+# const N = Int(2^31-1) # 368 seconds to run
 const K = UInt(100)
 
 using Base.Threads
+nthreads()
+
+# srand(1);
+# by = rand(Int32(1):Int32(round(N/K)), N);
+# val =  rand(Int32(1):Int32(5), N);
+# @code_warntype sumby_binary_group(by, val)
+# @time sumby_binary_group(by, val)
+#
+# @time bench_sumby_multi_rs()
+# @time bench_sumby_radixsort()
+
+# srand(1);
+# id6 = rand(Int32(1):Int32(round(N/K)), N);
+# v1 =  rand(Int32(1):Int32(5), N);
+# gc()
+# @elapsed sumby_multi_rs(id6, v1)
+
+srand(1)
+id6 = rand(Int32(1):Int32(round(N/K)), N)
+v1 =  rand(Int32(1):Int32(5), N)
+# radix sort method
+gc()
+@time sumby_radixsort(id6,v1)
 
 function bench_sumby_multi_rs()
     srand(1);
     id6 = rand(Int32(1):Int32(round(N/K)), N);
     v1 =  rand(Int32(1):Int32(5), N);
+    gc()
     @elapsed sumby_multi_rs(id6, v1)
 end
 
@@ -23,6 +47,7 @@ function bench_sumby_radixgroup()
     id6 = rand(Int32(1):Int32(round(N/K)), N)
     v1 =  rand(Int32(1):Int32(5), N)
     # radix sort method
+    gc()
     @elapsed sumby_radixgroup(id6,v1);
 end
 
@@ -31,19 +56,46 @@ function bench_sumby_radixsort()
     id6 = rand(Int32(1):Int32(round(N/K)), N)
     v1 =  rand(Int32(1):Int32(5), N)
     # radix sort method
+    gc()
     @elapsed sumby_radixsort(id6,v1);
 end
 
-bench_mrs = [bench_sumby_multi_rs() for i = 1:5]
-bench_rg = [bench_sumby_radixgroup() for i = 1:5]
-bench_rs = [bench_sumby_radixsort() for i = 1:5]
+function bench_sumby_radixsort_extra()
+    srand(1)
+    id6 = rand(Int32(1):Int32(round(N/K)), N)
+    v1 =  rand(Int32(1):Int32(5), N)
+    # radix sort method
+    gc()
+    @elapsed sumby_radixsort_extra(id6,v1);
+end
 
+@time bench_mrs = [bench_sumby_multi_rs() for i = 1:3]
+# @time bench_rg = [bench_sumby_radixgroup() for i = 1:3]
+@time bench_rs = [bench_sumby_radixsort() for i = 1:5]
+@time bench_rse = [bench_sumby_radixsort_extra() for i = 1:5]
+
+using HypothesisTests
+p1 = pvalue(EqualVarianceTTest(bench_rs, bench_rse))
+p2 = pvalue(UnequalVarianceTTest(bench_rs, bench_rse))
+while (p1 >= 0.05) | (p2 >= 0.05)
+    @time bench_rs = vcat(bench_rs, [bench_sumby_radixsort()])
+    @time bench_rse =  vcat(bench_rse, [bench_sumby_radixsort_extra()])
+    p1 = pvalue(EqualVarianceTTest(bench_rs, bench_rse))
+    p2 = pvalue(UnequalVarianceTTest(bench_rs, bench_rse))
+end
+mean(bench_rs[2:end]) #19.2
+mean(bench_rse[2:end])
+p1 = pvalue(EqualVarianceTTest(bench_rs, bench_rse))
+p2 = pvalue(UnequalVarianceTTest(bench_rs, bench_rse))
+
+1 - mean(bench_rs)/mean(bench_rse) # the new version is faster
 1 - mean(bench_mrs)/mean(bench_rs) #49.6% faster radixsort
-1 - mean(bench_mrs)/mean(bench_rg) #37.2% faster radixgroup
+# 1 - mean(bench_mrs)/mean(bench_rg) #37.2% faster radixgroup
 
 mean(bench_mrs[2:end]) #9.87
-mean(bench_rg[2:end]) #15.5
+# mean(bench_rg[2:end]) #15.5
 mean(bench_rs[2:end]) #19.2
+mean(bench_rse[2:end])
 
 # generate string ids
 function randstrarray1(pool, N)
