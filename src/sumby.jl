@@ -52,7 +52,7 @@ srand(1)
 function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
     l = length(by)
 
-    l == length(val) && throw(ErrorException("length of by and val must be the same"))
+    l == length(val) || throw(ErrorException("length of by and val must be the same"))
 
     if l == 0
         return Dict{T,S}()
