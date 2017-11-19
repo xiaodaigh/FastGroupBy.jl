@@ -2,7 +2,6 @@
 @time using DataFrames, IndexedTables, IterableTables
 @time import DataFrames.DataFrame
 
-
 const N = 10_000_000
 const K = 100
 srand(1)
@@ -28,7 +27,8 @@ srand(1)
 
 srand(1);
 @time df = DataFrame(id = rand(1:K,N), val = rand(round.(rand(K)*100,4), N))
-# DataFrames is faster at dealing with DataArrays especially after first compilation
+
+# sumby is faster at dealing with DataArrays too
 @elapsed DataFrames.aggregate(df, :id, sum)
 @elapsed DataFrames.aggregate(df, :id, sum)
 @elapsed sumby(df, :id, :val)

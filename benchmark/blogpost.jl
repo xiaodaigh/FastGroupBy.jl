@@ -5,9 +5,10 @@
 using FastGroupBy, PooledArrays
 import PooledArrays.PooledArray
 
-#const N = Int(2e9/8)
+const N = Int(2e9/8)
 # const N = Int(2^31-1) # 368 seconds to run
 const K = UInt(100)
+
 
 using Base.Threads
 nthreads()
@@ -21,11 +22,11 @@ nthreads()
 # @time bench_sumby_multi_rs()
 # @time bench_sumby_radixsort()
 
-# srand(1);
-# id6 = rand(Int32(1):Int32(round(N/K)), N);
-# v1 =  rand(Int32(1):Int32(5), N);
-# gc()
-# @elapsed sumby_multi_rs(id6, v1)
+srand(1);
+id6 = rand(Int32(1):Int32(round(N/K)), N);
+v1 =  rand(Int32(1):Int32(5), N);
+gc()
+@elapsed sumby_multi_rs(id6, v1)
 
 srand(1)
 id6 = rand(Int32(1):Int32(round(N/K)), N)
