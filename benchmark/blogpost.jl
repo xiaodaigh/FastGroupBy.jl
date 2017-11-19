@@ -5,10 +5,9 @@
 using FastGroupBy, PooledArrays
 import PooledArrays.PooledArray
 
-const N = Int(2e9/8)
+const N = 100_000_000
 # const N = Int(2^31-1) # 368 seconds to run
 const K = UInt(100)
-
 
 using Base.Threads
 nthreads()
@@ -23,22 +22,32 @@ nthreads()
 # @time bench_sumby_radixsort()
 
 srand(1);
+id6 = rand(Int64(1):Int64(round(N/K)), N);
+v1 =  rand(Int64(1):Int64(5), N);
+gc()
+@elapsed sumby_multi_rs(id6, v1)
+
+srand(1);
+id4 = rand(Int64(1):Int64(K), N);
+gc()
+@elapsed sumby_multi_rs(id4, v1)
+
+
+srand(1);
 id6 = rand(Int32(1):Int32(round(N/K)), N);
 v1 =  rand(Int32(1):Int32(5), N);
 gc()
 @elapsed sumby_multi_rs(id6, v1)
 
-srand(1)
-id6 = rand(Int32(1):Int32(round(N/K)), N)
-v1 =  rand(Int32(1):Int32(5), N)
-# radix sort method
+srand(1);
+id4 = rand(Int32(1):Int32(K), N);
 gc()
-@time sumby_radixsort(id6,v1)
+@elapsed sumby_multi_rs(id4, v1)
 
 function bench_sumby_multi_rs()
     srand(1);
-    id6 = rand(Int32(1):Int32(round(N/K)), N);
-    v1 =  rand(Int32(1):Int32(5), N);
+    # id6 = rand(Int32(1):Int32(round(N/K)), N);
+    # v1 =  rand(Int32(1):Int32(5), N);
     gc()
     @elapsed sumby_multi_rs(id6, v1)
 end
@@ -46,7 +55,7 @@ end
 function bench_sumby_radixgroup()
     srand(1)
     id6 = rand(Int32(1):Int32(round(N/K)), N)
-    v1 =  rand(Int32(1):Int32(5), N)
+    # v1 =  rand(Int32(1):Int32(5), N)
     # radix sort method
     gc()
     @elapsed sumby_radixgroup(id6,v1);
@@ -55,7 +64,7 @@ end
 function bench_sumby_radixsort()
     srand(1)
     id6 = rand(Int32(1):Int32(round(N/K)), N)
-    v1 =  rand(Int32(1):Int32(5), N)
+    # v1 =  rand(Int32(1):Int32(5), N)
     # radix sort method
     gc()
     @elapsed sumby_radixsort(id6,v1);
@@ -64,7 +73,7 @@ end
 function bench_sumby_radixsort_extra()
     srand(1)
     id6 = rand(Int32(1):Int32(round(N/K)), N)
-    v1 =  rand(Int32(1):Int32(5), N)
+    # v1 =  rand(Int32(1):Int32(5), N)
     # radix sort method
     gc()
     @elapsed sumby_radixsort_extra(id6,v1);

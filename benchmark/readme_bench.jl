@@ -1,5 +1,5 @@
 @time using FastGroupBy
-@time using DataFrames, IndexedTables, IterableTables
+@time using DataFrames, IndexedTables, Compat, BenchmarkTools
 @time import DataFrames.DataFrame
 
 const N = 10_000_000
@@ -8,28 +8,16 @@ srand(1)
 @time idt = IndexedTable(
   Columns(row_id = [1:N;]),
   Columns(
-    id = rand(1:K,N),
+    id = rand(1:Int(round(N/K)),N),
     val = rand(round.(rand(K)*100,4), N)
   ));
 
-# sumby is faster for IndexedTables without nulls
-@elapsed IndexedTables.aggregate_vec(sum, idt, by =(:id,), with = :val)
-@elapsed IndexedTables.aggregate_vec(sum, idt, by =(:id,), with = :val)
-@elapsed sumby(idt, :id, :val)
-@elapsed sumby(idt, :id, :val)
+# sumby is faster for IndexedTables without missings
+@belapsed IndexedTables.aggregate_vec(sum, idt, by =(:id,), with = :val)
+@belapsed sumby(idt, :id, :val)
 
-# sumby is also faster for DataFrame without nulls
-@elapsed idtdf = DataFrame(idt)
-@elapsed DataFrames.aggregate(idtdf, :id, sum)
-@elapsed DataFrames.aggregate(idtdf, :id, sum)
-@elapsed sumby(idtdf, :id, :val)
-@elapsed sumby(idtdf, :id, :val)
-
+# sumby is also faster for DataFrame without missings
 srand(1);
-@time df = DataFrame(id = rand(1:K,N), val = rand(round.(rand(K)*100,4), N))
-
-# sumby is faster at dealing with DataArrays too
-@elapsed DataFrames.aggregate(df, :id, sum)
-@elapsed DataFrames.aggregate(df, :id, sum)
-@elapsed sumby(df, :id, :val)
-@elapsed sumby(df, :id, :val)
+@time df = DataFrame(id = rand(1:Int(round(N/K)), N), val = rand(round.(rand(K)*100,4), N));
+@belapsed DataFrames.aggregate(df, :id, sum)
+@belapsed sumby(df, :id, :val)
