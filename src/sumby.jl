@@ -60,7 +60,7 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Di
         return Dict{T,S}(by[1], val[1])
     elseif issorted(by)
         return sumby_contiguous(by, val)
-    else if l <= 2^16
+    elseif l <= 2^16
         return sumby_sortperm(by, val)
     elseif nthreads() > 1
         return sumby_multi_rs(by, val)
@@ -74,7 +74,7 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Di
     end
 end
 
-"sumby by using radix and coutning sort to group by; it's only a partial sort. It's faster for large by"
+"sumby by using radix and counting sort to group by; it's only a partial sort. It's faster for large by"
 function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)::Dict{T,S}
     by_sim = similar(by)
     val1=similar(val)
@@ -181,7 +181,7 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
     return sumby_contiguous(by, val)
 end
 
-"sumby by sorting the by column"
+"sumby by sorting the by column using radixsort"
 function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
   by_sim = similar(by)
   val1=similar(val)
@@ -255,7 +255,7 @@ function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVect
   sumby_contiguous(by, val)
 end
 
-"sumby assuming that the elements are organised contiguously it does not perform a check"
+"sumby assuming that the elements are organised contiguously; it does not perform a check"
 function sumby_contiguous{T, S<:Number}(by_sorted::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
   res = Dict{T,S}()
   @inbounds tmp_val = val[1]
