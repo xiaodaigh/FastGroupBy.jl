@@ -60,13 +60,13 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Di
         return Dict{T,S}(by[1], val[1])
     elseif issorted(by)
         return sumby_contiguous(by, val)
+    else if l <= 2^16
+        return sumby_sortperm(by, val)
     elseif nthreads() > 1
         return sumby_multi_rs(by, val)
     end
 
-    if l <= 2^16
-        return sumby_sortperm(by, val)
-    elseif l <= 50_000_000
+    if l <= 50_000_000
         return sumby_radixsort(by, val)
     else
         # return sumby_radixgroup(by, val)
