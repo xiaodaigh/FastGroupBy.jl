@@ -49,24 +49,24 @@ srand(1)
 
 ```
 """
-function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S}
     l = length(by)
 
     l == length(val) || throw(ErrorException("length of by and val must be the same"))
 
     if l == 0
         return Dict{T,S}()
-    elseif length(by) == 1
+    elseif l == 1
         return Dict{T,S}(by[1], val[1])
     elseif issorted(by)
         return sumby_contiguous(by, val)
     elseif l <= 2^16
         return sumby_sortperm(by, val)
+    elseif !isbits(T) | alg == :dict
+        return sumby_dict(by, val)
     elseif nthreads() > 1
         return sumby_multi_rs(by, val)
-    end
-
-    if l <= 50_000_000
+    elseif l <= 50_000_000
         return sumby_radixsort(by, val)
     else
         # return sumby_radixgroup(by, val)
@@ -114,7 +114,7 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
                 # Histogram for each element, radix
                 for i = lo:hi
                     #v = uint_mapping(o, by[i])
-                    idx = @compat(Int((by[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+                    idx = Int((by[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
                     @inbounds bin[idx] += 1
                 end
 
@@ -123,7 +123,7 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
 
                 # Unroll first data iteration, check for degenerate case
                 #v = uint_mapping(o, by[hi])
-                idx = @compat(Int((by[hi] >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+                idx = Int((by[hi] >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
 
                 # are all values the same at this radix?
                 if bin[idx] == len
@@ -152,7 +152,7 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
                     # Finish the loop...
                     @inbounds for i in hi-1:-1:lo
                       #v = uint_mapping(o, by[i])
-                      idx = @compat(Int((by[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK)) + 1
+                      idx =Int((by[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
                       ci = cbin[idx]
                       by_sim[ci] = by[i]
                       val1[ci] = val[i]
@@ -232,7 +232,7 @@ function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVect
       # Finish the loop...
       @inbounds for i in hi-1:-1:lo
           v = by[i]
-          idx =Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+          idx = Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
           ci = cbin[idx]
           by_sim[ci] = by[i]
           val1[ci] = val[i]
@@ -298,7 +298,7 @@ end
 
 "This is faster for smaller by and also doesn't change the input"
 function sumby_sortperm{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
-    sp = sortperm(by)
+    sp = sortperm(by, alg = RadixSort)
     sumby_contiguous(view(by, sp), view(val,sp))
 end
 # function sumby_sortperm2{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
@@ -313,12 +313,8 @@ function sumby_dict{T,S<:Number}(by::AbstractVector{T}, val::AbstractVector{S}):
   for (byi, vali) in zip(by, val)
     index = ht_keyindex2(res, byi)
     if index > 0
-      #@inbounds  res.vals[index] += vali
-      res.age += 1
-      @inbounds res.keys[index] = byi
       @inbounds res.vals[index] += vali
     else
-      # @inbounds res[byi] = vali
       @inbounds _setindex!(res, vali, byi, -index)
     end
   end
@@ -379,6 +375,5 @@ function psumby{T,S<:Number}(by::Vector{T}, val::Vector{S})
   vals = SharedArray(val)
   return psumby(bys, vals)
 end
-
 
 psumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = psumby(column(dt,by), column(dt,val))

@@ -1,0 +1,96 @@
+[[BinDeps]]
+deps = ["Compat", "SHA", "URIParser"]
+hash-sha1 = "28db737a557076fc94db3fec48a7ffc5f410969b"
+uuid = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
+version = "0.6.0"
+
+[[CSV]]
+deps = ["CategoricalArrays", "DataFrames", "DataStreams", "WeakRefStrings"]
+hash-sha1 = "a227d0d52defd13747ffb020552ac44c10466fd0"
+uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+version = "0.2.0"
+
+[[CategoricalArrays]]
+deps = ["Missings", "Reexport"]
+hash-sha1 = "d0dce4a7739d67bb4283f9663e40709ee589e7a4"
+uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+version = "0.3.0"
+
+[[Compat]]
+hash-sha1 = "1a02277c48062aa59872f99c6f5abb62935ff431"
+uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
+version = "0.37.0"
+
+[[DataFrames]]
+deps = ["CategoricalArrays", "DataStreams", "GZip", "Missings", "Reexport", "SortingAlgorithms", "StatsBase", "WeakRefStrings"]
+hash-sha1 = "1771788c6a9b86f477d66563d43f65bae9126663"
+uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+version = "0.11.1"
+
+[[DataStreams]]
+deps = ["Missings", "NamedTuples", "WeakRefStrings"]
+hash-sha1 = "33759c5b9257f090b060a280567aeef64323e927"
+uuid = "9a8bc11e-79be-5b39-94d7-1ccc349a1a85"
+version = "0.3.1"
+
+[[DataStructures]]
+hash-sha1 = "dd578553865ce68262e6f647793b4fbd9dde505c"
+uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+version = "0.7.2"
+
+[[GZip]]
+deps = ["Compat"]
+hash-sha1 = "9ddf213b14f864cbdd71d5b38f8910d7dad23469"
+uuid = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
+version = "0.3.0"
+
+[[Missings]]
+deps = ["Compat"]
+hash-sha1 = "855d03a712bc12737d4075aad5f46ea61dcd023c"
+uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
+version = "0.2.2"
+
+[[NamedTuples]]
+hash-sha1 = "8e2238de206ce98f87b60be33cf9637f78c152ca"
+uuid = "73a701b4-84e1-5df0-88ff-1968ee2ee8dc"
+version = "4.0.0"
+
+[[Reexport]]
+hash-sha1 = "7ef7453f307c23ad36e8ba46db905a844c4ee6a2"
+uuid = "189a3867-3050-52da-a836-e630ba90ab69"
+version = "0.0.3"
+
+[[SHA]]
+hash-sha1 = "069ed88d6789fe615059ef615ec83abf162882a8"
+uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.5.2"
+
+[[SortingAlgorithms]]
+deps = ["Compat", "DataStructures"]
+hash-sha1 = "f359e8a86e2e160901417317d4015925275b7e72"
+uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
+version = "0.2.0"
+
+[[SpecialFunctions]]
+deps = ["BinDeps", "Compat"]
+hash-sha1 = "a052147e601e79260de0680f26335800b4f63dad"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "0.3.4"
+
+[[StatsBase]]
+deps = ["Compat", "DataStructures", "SpecialFunctions"]
+hash-sha1 = "3ae8f34d7cdd3a42c2232f15e11d4da413db1d18"
+uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+version = "0.19.1"
+
+[[URIParser]]
+deps = ["Compat"]
+hash-sha1 = "3f29a4dd44e6efef861902d5a4c1cf1b0fc26cbb"
+uuid = "30578b45-9adc-5946-b283-645ec420af67"
+version = "0.2.0"
+
+[[WeakRefStrings]]
+deps = ["Missings"]
+hash-sha1 = "bf7a6309ba9b5cb9677d42c0776cd212d25a409b"
+uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+version = "0.4.0"

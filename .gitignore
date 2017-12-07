@@ -5,3 +5,7 @@
 lc_juliadb/
 
 hehe5\.csv
+
+\.juliadb/
+
+*.csv
