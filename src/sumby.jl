@@ -62,7 +62,7 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; alg
         return sumby_contiguous(by, val)
     elseif l <= 2^16
         return sumby_sortperm(by, val)
-    elseif !isbits(T) | alg == :dict
+    elseif !isbits(T) || alg == :dict
         return sumby_dict(by, val)
     elseif nthreads() > 1
         return sumby_multi_rs(by, val)
