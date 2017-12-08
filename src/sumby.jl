@@ -1,8 +1,3 @@
-#
-#  Split - Apply - Combine - sumby operations
-#
-
-
 ##############################################################################
 ##
 ## sumby...
@@ -12,11 +7,11 @@
 """
 Perform sum by group
 ```julia
-sumby(df::Union{AbstractDataFrame,IndexedTable}, by::Symbol, val::Symbol)
+sumby(df::Union{AbstractDataFrame,NDSparse}, by::Symbol, val::Symbol)
 sumby(by::AbstractVector  val::AbstractVector)
 ```
 ### Arguments
-* `df` : an AbstractDataFrame/IndexedTable from which to extract the by and val columns
+* `df` : an AbstractDataFrame/NDSparse from which to extract the by and val columns
 * `by` : data table column to group by
 * `val`: data table column to sum
 ### Returns
@@ -28,15 +23,15 @@ sumby(by::AbstractVector  val::AbstractVector)
 const N = 10_000_000
 const K = 100
 srand(1)
-@time idt = IndexedTable(
+@time idt = NDSparse(
   Columns(row_id = [1:N;]),
   Columns(
     id = rand(1:K,N),
     val = rand(round.(rand(K)*100,4), N)
   ));
 
-# sumby is faster for IndexedTables without nulls
-@elapsed IndexedTables.aggregate_vec(sum, idt, by =(:id,), with = :val)
+# sumby is faster for NDSparses without nulls
+@elapsed NDSparses.aggregate_vec(sum, idt, by =(:id,), with = :val)
 @elapsed sumby(idt, :id, :val)
 
 # sumby is also faster for DataFrame without nulls
@@ -49,7 +44,7 @@ srand(1)
 
 ```
 """
-function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S}
+function sumby(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S} where {T, S<:Number}
     l = length(by)
 
     l == length(val) || throw(ErrorException("length of by and val must be the same"))
@@ -75,7 +70,7 @@ function sumby{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; alg
 end
 
 "sumby by using radix and counting sort to group by; it's only a partial sort. It's faster for large by"
-function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)::Dict{T,S}
+function sumby_radixgroup(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)::Dict{T,S} where {T, S<:Number}
     by_sim = similar(by)
     val1=similar(val)
     o = Forward
@@ -182,7 +177,7 @@ function sumby_radixgroup{T, S<:Number}(by::AbstractVector{T},  val::AbstractVec
 end
 
 "sumby by sorting the by column using radixsort"
-function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+function sumby_radixsort(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
   by_sim = similar(by)
   val1=similar(val)
   lo = 1
@@ -256,7 +251,7 @@ function sumby_radixsort{T, S<:Number}(by::AbstractVector{T},  val::AbstractVect
 end
 
 "sumby assuming that the elements are organised contiguously; it does not perform a check"
-function sumby_contiguous{T, S<:Number}(by_sorted::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+function sumby_contiguous(by_sorted::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
   res = Dict{T,S}()
   @inbounds tmp_val = val[1]
   @inbounds last_byi = by_sorted[1]
@@ -297,7 +292,7 @@ end
 # end
 
 "This is faster for smaller by and also doesn't change the input"
-function sumby_sortperm{T, S<:Number}(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S}
+function sumby_sortperm(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
     sp = sortperm(by, alg = RadixSort)
     sumby_contiguous(view(by, sp), view(val,sp))
 end
@@ -307,7 +302,7 @@ end
 # end
 
 "sumby using Dict - can be quite slow due to slow hash table operations"
-function sumby_dict{T,S<:Number}(by::AbstractVector{T}, val::AbstractVector{S})::Dict{T,S}
+function sumby_dict(by::AbstractVector{T}, val::AbstractVector{S})::Dict{T,S} where {T,S<:Number}
   res = Dict{T, S}()
   # resize the Dict to a larger size
   for (byi, vali) in zip(by, val)
@@ -322,7 +317,7 @@ function sumby_dict{T,S<:Number}(by::AbstractVector{T}, val::AbstractVector{S}):
 end
 
 #Optimized sumby for PooledArrays
-function sumby{S<:Number}(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S})
+function sumby(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S}) where {S<:Number}
   l = length(by.pool)
   res = zeros(S, l)
   #refs = Int64.(by.refs)
@@ -334,46 +329,4 @@ function sumby{S<:Number}(by::Union{PooledArray, CategoricalArray}, val::Abstrac
   return Dict(by.pool[i] => res[i] for i in S(1):S(l))
 end
 
-sumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = sumby(column(dt,by), column(dt,val))
-
-function psumby{T,S<:Number}(by::SharedArray{T,1}, val::SharedArray{S,1})
-  np = nprocs()
-  if np == 1
-    throw(ErrorException("only one proc"))
-  end
-  l = length(by)
-  res = [@spawnat k sumby_res = sumby(by[localindexes(by)], val[localindexes(val)]) for k = 2:np]
-
-  # ress = pmap(res) do res1
-  #   next_res = fetch(res1)
-  #   szero = zero(S)
-  #   for k = keys(next_res)
-  #     sumby_res[k] = get(sumby_res, k, szero) + next_res[k]
-  #   end
-  #   sumby_res
-  # end
-
-  # algorithms to collate all dicts
-
-  fnl_res = fetch(res[1])
-  szero = zero(S)
-  for i = 2:length(res)
-    next_res = fetch(res[i])
-    for k = keys(next_res)
-      fnl_res[k] = get(fnl_res, k, szero) + next_res[k]
-    end
-  end
-  fnl_res
-end
-
-function psumby{S<:Number}(by::Union{PooledArray, CategoricalArray}, val::Vector{S})
-  return sumby(by, val)
-end
-
-function psumby{T,S<:Number}(by::Vector{T}, val::Vector{S})
-  bys = SharedArray(by)
-  vals = SharedArray(val)
-  return psumby(bys, vals)
-end
-
-psumby(dt::Union{AbstractDataFrame, IndexedTable}, by::Symbol, val::Symbol) = psumby(column(dt,by), column(dt,val))
+sumby(dt::Union{AbstractDataFrame, NDSparse}, by::Symbol, val::Symbol) = sumby(column(dt,by), column(dt,val))

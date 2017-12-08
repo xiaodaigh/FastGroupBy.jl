@@ -1,6 +1,4 @@
 import DataFrames.AbstractDataFrame
-import DataFrames.DataFrame
-import IndexedTables.IndexedTable
 
 """
   column(df, :colname)
@@ -12,13 +10,13 @@ function column(dt::AbstractDataFrame, col::Symbol)
   dt.columns[i]
 end
 
-"""
-  select(:col)
-
-Return a funciton that obtains a column with the named symbol from an AbstractDataFrame or IndexedTable
-"""
-function select(col::Symbol)
-  return function(df::Union{AbstractDataFrame,IndexedTable})
-    column(df, col)
-  end
-end
+# """
+#   select(:col)
+#
+# Return a funciton that obtains a column with the named symbol from an AbstractDataFrame or NDSparse
+# """
+# function select(col::Symbol)
+#   return function(df::Union{AbstractDataFrame,NDSparse})
+#     column(df, col)
+#   end
+# end

@@ -69,29 +69,30 @@ function sorttwo!(vs::AbstractVector, index::AbstractVector, lo::Int = 1, hi::In
         vs,ts = ts,vs
         index, index1 = index1, index
         for i = lo:hi
-            vs[i] = ts[i]
-            index[i] = index[1]
+            @inbounds vs[i] = ts[i]
+            @inbounds index[i] = index1[i]
         end
     end
     (vs, index)
 end
 
 
-function fsortandperm_radix!(vs::AbstractArray)
+function fsortandperm_radix!(vs::AbstractArray{T})::Tuple{Vector{T}, Vector{Int}} where {T}
     l = length(vs)
-    if l <= 2^8-1
-        T = UInt8
-    elseif l <= 2^16 - 1
-        T = UInt16
-    elseif l <= 2^32 - 1
-        T = UInt32
-    elseif l <= 2^64 - 1
-        T = UInt64
-    elseif l <= 2^128 - 1
-        T = UInt128
-    else
-        throw(ErrorException("what? too big"))
-    end
+    sorttwo!(vs, Array(1:l))
+    # if l <= 2^8-1
+    #     T = UInt8
+    # elseif l <= 2^16 - 1
+    #     T = UInt16
+    # elseif l <= 2^32 - 1
+    #     T = UInt32
+    # elseif l <= 2^64 - 1
+    #     T = UInt64
+    # elseif l <= 2^128 - 1
+    #     T = UInt128
+    # else
+    #     throw(ErrorException("what? too big"))
+    # end
 
-    sorttwo!(vs, collect(T(1):T(length(vs))))
+    # sorttwo!(vs, collect(T(1):T(length(vs))))
 end
