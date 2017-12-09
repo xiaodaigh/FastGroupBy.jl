@@ -31,7 +31,7 @@ export meanby, column, sumby, pmeanby, psumby, select, pgroupreduce
 export dict_add_reduce, dict_mean_reduce
 export sumby_htsize, sumby_contiguous, sumby_dict, sumby_radixgroup
 export sumby_radixsort, sumby_sortperm, sumby_lessmem_chain, sumby
-export sumby_multi_rs, fsortandperm_radix!,sorttwo!
+export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
 
 ##############################################################################
 ##
