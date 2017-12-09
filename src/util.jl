@@ -1,6 +1,7 @@
+using Base.Threads
 import DataFrames.AbstractDataFrame
 import DataFrames.DataFrame
-import IndexedTables.IndexedTable
+import IndexedTables.NDSparse
 
 """
   column(df, :colname)
@@ -15,16 +16,15 @@ end
 """
   select(:col)
 
-Return a funciton that obtains a column with the named symbol from an AbstractDataFrame or IndexedTable
+Return a funciton that obtains a column with the named symbol from an AbstractDataFrame or NDSparse
 """
 function select(col::Symbol)
-  return function(df::Union{AbstractDataFrame,IndexedTable})
+  return function(df::Union{AbstractDataFrame,NDSparse})
     column(df, col)
   end
 end
 
 "https://discourse.julialang.org/t/whats-the-fastest-way-to-generate-1-2-n/7564/15"
-using Base.Threads
 function fcollect(N,T=Int)
     nt = nthreads()
     n,r = divrem(N,nt)
