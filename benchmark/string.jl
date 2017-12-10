@@ -2,9 +2,18 @@
 #Pkg.clone("https://github.com/JuliaData/SplitApplyCombine.jl.git")
 #Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 
-using FastGroupBy, PooledArrays
+using FastGroupBy
 
-const N = 1_000_000
+const M=100_000_000; const K=100
+srand(1)
+svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+@time radixsort!(svec1)
+issorted(svec1)
+
+
+using PooledArrays
+
+const N = 100_000_000
 # const N = Int(2^31-1) # 368 seconds to run
 const K = 100
 
@@ -46,42 +55,130 @@ by_vec = pool_str
 using FastGroupBy
 @time sumby_dict(zip(pool_str, id), valvec)
 
+
 # fast group by for unicode strings
 function fastby!(fn::Function, byvec::Vector{T}, valvec::Vector{S}, skip_sizeof_grouping = false, ascii_only = false) where {T<:AbstractString,S}
-    if ascii_only || all(isascii.(byvec))
-        return Dict{T, S}{}
-    end
     l = length(byvec)
 
     # firstly sort the string by size
     if skip_sizeof_grouping
         ##
     else
-        svec = sizeof.(svec)
+        sizevec = sizeof.(svec)
         # typically the range of sizes for
         minsize, maxsize = extrema(svec)
         if  minsize != maxsize
             # if there is only one size then ignore
             indices = collect(1:l)
-            grouptwo!(svec, indices)
+            # grouptwo!(svec, indices)
         else
+        end
     end
 end
 
-# sorting in data.frame is slow
-if false
-    using DataFrames
-    srand(1)
-    @time df = DataFrame(idstr = rand([@sprintf "id%03d" k for k in 1:(N/K)], N)
-        , id = rand(1:K, N)
-        , val = rand(N))
-
-    @time sort!(df,cols=[:id, :val])
+function isgrouped(x, hashx)
+    x1 = x[1]
+    hashx1 = hashx[1]
+    for i = 2:length(x)
+        @inbounds if x1 != x[i]
+            if hashx1 == hashx[i]
+                return false
+            else
+                x1 = x[i]
+                hashx1 = hashx[i]
+            end
+        end
+    end
+    return true
 end
 
-function fastby!(fn:: Function, byitr, valvec::AbstractVector{S})
-    # use dictionary for iterables
-    i  = start(byitr)
-    val,  i = next(byitr, i)
-    res = Dict{eltype(val), S}
+function roughhash(s::AbstractString)
+    pp = pointer(s)
+    sz = sizeof(s)
+    hh = zero(UInt64) | Base.pointerref(pp, 1, 1)
+    for j = 2:min(sz, 8)
+        hh = (hh << 8) | Base.pointerref(pp, j, 1)
+    end
+    hh
 end
+@benchmark roughhash(x)
+
+function radixgroup(fn::Function, svec::Vector{T}, valvec::Vector{S}) where {T <: AbstractString, S}
+    a = zeros(UInt128, length(svec))
+    @time for (i, s) in enumerate(svec)
+        pp = pointer(s)
+        hh = zero(UInt128) ⊻ Base.pointerref(pp, 1, 1)
+        sz = sizeof(s)
+        for j = 2:min(16,sz)
+            hh = (hh << 8) ⊻ Base.pointerref(pp, j, 1)
+            # hh += (hh << 10);
+            # hh ^= (hh >> 6);
+        end
+        @inbounds a[i] = hh
+    end
+    a
+    # @time grouptwo!(a, valvec)
+    #
+    # res = Dict{T, S}()
+    # l = length(svec)
+    #
+    # j = 1
+    # lastby = svec[1]
+    # @time for i = 2:l
+    #     @inbounds byval = svec[i]
+    #     if byval != lastby
+    #         viewvalvec = @view valvec[j:i-1]
+    #         @inbounds res[lastby] = fn(viewvalvec)
+    #         j = i
+    #         @inbounds lastby = svec[i]
+    #     end
+    # end
+    #
+    # viewvalvec = @view valvec[j:l]
+    # @inbounds res[svec[l]] = fn(viewvalvec)
+    # return res
+end
+
+@time permi = radixgroup(sum, svec, valvec)
+using StatsBase
+countmap(permi)
+
+hh = zero(UInt)
+j=1
+pp = pointer(svec[1])
+bp = Base.pointerref(pp, j, 1)
+hh = xor(hh << 8, bp)
+j = j + 1
+
+@code_warntype radixgroup!(svec)
+
+function fastby(fn::Function, byvec::Vector{T}, valvec::Vector) where T <: AbstractString
+    permi = radixgroup!(byvec)
+    fastby_contiguous(fn, byvec[permi], valvec[permi])
+end
+
+function fastby_contiguous(fn::Function, byvec::Vector{T}, valvec::Vector{S}) where {T <: AbstractString, S}
+    res = Dict{T, S}()
+    l = length(byvec)
+
+    j = 1
+    lastby = byvec[1]
+    for i = 2:l
+        @inbounds byval = byvec[i]
+        if byval != lastby
+            viewvalvec = @view valvec[j:i-1]
+            @inbounds res[lastby] = fn(viewvalvec)
+            j = i
+            @inbounds lastby = byvec[i]
+        end
+    end
+
+    viewvalvec = @view valvec[j:l]
+    @inbounds res[byvec[l]] = fn(viewvalvec)
+    return res
+end
+
+@time fastby(sum, idstr, valvec)
+
+using StatsBase
+@time countmap(idstr)

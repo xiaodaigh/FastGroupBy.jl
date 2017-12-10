@@ -2,6 +2,29 @@
 
 Fast algorithms for doing group-by. Currently only `sumby` is implemented
 
+# Faster string sort
+```julia
+using FastGroupBy
+
+const M=100_000_000; const K=100
+srand(1)
+svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+@time radixsort!(svec1) #18 seconds
+issorted(svec1)
+```
+The speed is now on par with R for strings of size 8 bytes
+
+```r
+N=1e8; K=100
+set.seed(1)
+library(data.table)
+id3 = sample(sprintf("i%07d",1:(N/K)), N, TRUE)
+pt = proc.time()
+system.time(sort(id3, method="radix"))
+data.table::timetaken(pt) # 18.9 seconds
+```
+
+# sumby
 ```julia
 # install FastGroupBy.jl
 Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")

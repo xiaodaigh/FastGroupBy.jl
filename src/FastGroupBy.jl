@@ -8,7 +8,7 @@ import DataFrames: DataFrame, AbstractDataFrame
 import IndexedTables: NDSparse, column
 import PooledArrays.PooledArray
 import CategoricalArrays.CategoricalArray
-import SplitApplyCombine.groupreduce
+# import SplitApplyCombine.groupreduce
 
 
 # using DataBench
@@ -31,6 +31,7 @@ export fastby, column, sumby
 export sumby_contiguous, sumby_dict, sumby_radixgroup
 export sumby_radixsort, sumby_sortperm, sumby
 export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
+export radixsort!
 
 ##############################################################################
 ##
@@ -39,8 +40,11 @@ export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
 ##############################################################################
 
 include("sumby.jl")
+include("sorttwo2.jl")
 include("sortandperm.jl")
 include("sumby_multithreaded.jl")
 include("util.jl")
+include("grouptwo.jl")
+include("string_sort.jl")
 
 end # module FastGroupBy
