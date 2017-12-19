@@ -4,8 +4,8 @@ Fast algorithms for doing group-by. Currently only `sumby` is implemented
 
 # Faster string sort
 ```julia
+# Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 using FastGroupBy
-
 
 const M=10_000_000; const K=100
 srand(1)
