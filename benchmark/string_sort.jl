@@ -1,3 +1,4 @@
+using Revise
 using FastGroupBy
 const M=1000; const K=100
 srand(1)
@@ -6,6 +7,7 @@ srand(1)
 @time radixsort!(svec1)
 issorted(svec1)
 
+include("src/sorttwo_lsd16.jl")
 const M=10_000_000; const K=100
 srand(1)
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
@@ -24,16 +26,53 @@ srand(1)
 # @code_warntype radixsort!(svec1)
 issorted(svec1)
 
+const M=100_000_000; const K=100;
+srand(1);
+# @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+# @time fast(svec1)
+@time radixsort!(svec1) # 22-25-27s seconds
+# @code_warntype radixsort!(svec1)
+issorted(svec1)
+
+const M=100_000_000; const K=100;
+srand(1);
+# @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+# @time fast(svec1)
+@time FastGroupBy.radixsort8!(svec1) # 25-29-26 seconds slightly slower
+# @code_warntype radixsort!(svec1)
+issorted(svec1)
+
+const M=200_000_000; const K=100;
+srand(1);
+# @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+# @time fast(svec1)
+@time radixsort!(svec1) # 50 seconds
+# @code_warntype radixsort!(svec1)
+issorted(svec1)
+
+const M=200_000_000; const K=100;
+srand(1);
+# @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+# @time fast(svec1)
+@time FastGroupBy.radixsort8!(svec1) # 25-29-26 seconds slightly slower
+# @code_warntype radixsort!(svec1)
+issorted(svec1)
+
+
 # 7seconds on 10million; 2mins on 100m and only 12 seconds in
 # srand(1)
 # @time svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
 # @time sort(svec1)
 
-srand(1)
-@time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)
-@time radixsort!(svec1)
-issorted(length.(svec1))
-issorted(svec1)
+# srand(1)
+# @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)
+# @time radixsort!(svec1)
+# issorted(length.(svec1))
+# issorted(svec1)
 
 # srand(1)
 # @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)
@@ -64,12 +103,12 @@ issorted(svec1)
 # issorted(svec1)
 
 
-@time cc = load_bits.(svec1)
-@time sort(cc)
-include("sorttwo2.jl")
-@time sorttwo2!(cc, svec1)
+# @time cc = load_bits.(svec1)
+# @time sort(cc)
+# include("sorttwo2.jl")
+# @time sorttwo2!(cc, svec1)
 
-include("sorttwo2.jl")
+# include("sorttwo2.jl")
 const M=100_000_000; const K=100
 srand(1)
 # @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)

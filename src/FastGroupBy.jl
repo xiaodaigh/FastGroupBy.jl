@@ -46,5 +46,6 @@ include("sumby_multithreaded.jl")
 include("util.jl")
 include("grouptwo.jl")
 include("string_radixsort.jl")
+include("sorttwo_lsd16.jl")
 
 end # module FastGroupBy
