@@ -1,5 +1,8 @@
-
-function sorttwo2!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T,S}
+"""
+Sort the original vector as well as an auxillary index vector in a least
+significant digit (lsd) fashion. Good for sortperm implemenations
+"""
+function sorttwo_lsd!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T,S}
     l = length(vs)
 
     ts = similar(vs)

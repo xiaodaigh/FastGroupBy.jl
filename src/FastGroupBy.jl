@@ -40,11 +40,11 @@ export radixsort!
 ##############################################################################
 
 include("sumby.jl")
-include("sorttwo2.jl")
+include("sorttwo_lsd.jl")
 include("sortandperm.jl")
 include("sumby_multithreaded.jl")
 include("util.jl")
 include("grouptwo.jl")
-include("string_sort.jl")
+include("string_radixsort.jl")
 
 end # module FastGroupBy

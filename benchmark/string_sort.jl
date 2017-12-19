@@ -1,59 +1,4 @@
-load_bits(s::String, skipbytes = 0) = load_bits(UInt, s, skipbytes)
-
-function load_bits(::Type{T}, s::String, skipbytes = 0) where T<:Unsigned
-    n = sizeof(s)
-    ns = n - skipbytes
-
-    h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
-    h = (h << (ns)) >>  (ns)
-
-    return h
-
-    # if ns >= sizeof(T)
-    #     return unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
-    # else
-    #     # pp = pointer(s)
-    #     # for i = n:-1:skipbytes+1
-    #     #     @inbounds h = (h << 8) | codeunit(s, i)
-    #     #     #hh = (hh << 8) | Base.pointerref(pp, j, 1) # this line is slightly slower but codeunit is preferred as it's documented
-    #     # end
-    #     h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
-    #     h = (h << (ns)) >>  (ns)
-    #     return h
-    # end
-end
-
-function radixsort!(svec::Vector{String})
-    lens = maximum(sizeof.(svec))
-    iters = ceil(lens/8)
-    # sorttwo2!(lens, svec)
-    for i = iters:-1:1
-        sorttwo2!(load_bits.(svec, Int(i-1)*8),svec)
-    end
-    # return svec
-    # sort the longest vector using LSD
-
-    # skipbytes = 0
-    # bitsrep = load_bits.(svec)
-    # sorttwo2!(bitsrep, svec)
-    # i = 0
-    # while !issorted(svec)
-    #     i = i + 1
-    #     skipbytes += 8
-    #     if i == 4
-    #         throw(ErrorException("wassup"))
-    #     end
-    #     sorttwo2!(load_bits.(svec, skipbytes), svec)
-    # end
-    # return svec
-end
-
-# function fast(svec::Vector{String})
-#     sorttwo2!(unsafe_load.(Ptr{UInt}.(pointer.(svec))),svec)
-#     svec
-# end
-
-include("sorttwo2.jl")
+include("../src/sorttwo2.jl")
 const M=1000; const K=100
 srand(1)
 # @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)
@@ -61,16 +6,19 @@ srand(1)
 @time radixsort!(svec1)
 issorted(svec1)
 
-const M=100_000_000; const K=100
+const M=10_000_000; const K=100
 srand(1)
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
 @time svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
 # @time fast(svec1)
-@time radixsort!(svec1)
-@code_warntype radixsort!(svec1)
+@time radixsort!(svec1) # 3seconds on 10m; 41 seconds on 100m;
+# @code_warntype radixsort!(svec1)
 issorted(svec1)
 
-
+# 7seconds on 10million; 2mins on 100m and only 12 seconds in
+# srand(1)
+# @time svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
+# @time sort(svec1)
 
 srand(1)
 @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)

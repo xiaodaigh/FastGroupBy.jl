@@ -80,19 +80,4 @@ end
 function fsortandperm_radix!(vs::AbstractArray{T})::Tuple{Vector{T}, Vector{Int}} where {T}
     l = length(vs)
     sorttwo!(vs, Array(1:l))
-    # if l <= 2^8-1
-    #     T = UInt8
-    # elseif l <= 2^16 - 1
-    #     T = UInt16
-    # elseif l <= 2^32 - 1
-    #     T = UInt32
-    # elseif l <= 2^64 - 1
-    #     T = UInt64
-    # elseif l <= 2^128 - 1
-    #     T = UInt128
-    # else
-    #     throw(ErrorException("what? too big"))
-    # end
-
-    # sorttwo!(vs, collect(T(1):T(length(vs))))
 end
