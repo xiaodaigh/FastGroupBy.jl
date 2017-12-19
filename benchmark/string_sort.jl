@@ -1,4 +1,4 @@
-include("../src/sorttwo2.jl")
+using FastGroupBy
 const M=1000; const K=100
 srand(1)
 # @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)
@@ -11,7 +11,16 @@ srand(1)
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
 @time svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
 # @time fast(svec1)
-@time radixsort!(svec1) # 3seconds on 10m; 41 seconds on 100m;
+@time radixsort!(svec1) # 3 seconds on 10m; 41 seconds on 100m;
+# @code_warntype radixsort!(svec1)
+issorted(svec1)
+
+const M=10_000_000; const K=100
+srand(1)
+# @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+@time svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M)
+# @time fast(svec1)
+@time radixsort!(svec1) # 4 seconds on 10m; 41 seconds on 100m;
 # @code_warntype radixsort!(svec1)
 issorted(svec1)
 

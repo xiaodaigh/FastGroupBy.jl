@@ -38,6 +38,6 @@ function radixsort!(svec::Vector{String})
     iters = ceil(lens/sizeof(UInt))
     indexes = fcollect(length(svec))
     for i = iters:-1:1
-        sorttwo_lsd_by_byte!(load_bits.(svec, Int(i-1)*8), svec)
+        sorttwo_lsd!(load_bits.(svec, Int(i-1)*8), svec)
     end
 end
