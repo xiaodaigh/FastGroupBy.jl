@@ -10,20 +10,25 @@ using FastGroupBy
 const M=10_000_000; const K=100
 srand(1)
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
-# using radixsort to sort strings
+# using FastGroupBy.radixsort! to sort strings of length 8
 @time radixsort!(svec1) # 3 seconds on 10m
 issorted(svec1)
 
 srand(1)
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
-# using Base.sort!
+# using Base.sort! to sort strings of length 8
 @time sort!(svec1) # 7 seconds on 10m
 
-const M=10_000_000; const K=100
 srand(1)
 svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M)
+# using FastGroupBy.radixsort! to sort strings of length 16
 @time radixsort!(svec1) # 4 seconds on 10m
 issorted(svec1)
+
+srand(1)
+svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M)
+# using Base.sort! to sort strings of length 16
+@time sort!(svec1) # 8 seconds
 
 ```
 The speed is now on par with R for strings of size 8 bytes
