@@ -7,7 +7,7 @@ srand(1)
 @time radixsort!(svec1)
 issorted(svec1)
 
-include("src/sorttwo_lsd16.jl")
+# include("src/sorttwo_lsd16.jl")
 const M=10_000_000; const K=100
 srand(1)
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
@@ -31,7 +31,7 @@ srand(1);
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 # @time fast(svec1)
-@time radixsort!(svec1) # 22-25-27s seconds
+@time radixsort!(svec1) # 19
 # @code_warntype radixsort!(svec1)
 issorted(svec1)
 
@@ -40,7 +40,7 @@ srand(1);
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 # @time fast(svec1)
-@time FastGroupBy.radixsort8!(svec1) # 25-29-26 seconds slightly slower
+@time FastGroupBy.radixsort8!(svec1) # 17 seconds
 # @code_warntype radixsort!(svec1)
 issorted(svec1)
 
@@ -49,7 +49,7 @@ srand(1);
 # @time svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 # @time fast(svec1)
-@time radixsort!(svec1) # 50 seconds
+@time radixsort!(svec1) # 41 seconds
 # @code_warntype radixsort!(svec1)
 issorted(svec1)
 

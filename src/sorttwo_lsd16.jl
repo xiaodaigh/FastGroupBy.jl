@@ -12,7 +12,7 @@ function sorttwo_lsd16!(vs::AbstractVector{T}, index::AbstractVector{S}) where {
     iters = sizeof(T) >> 1
     bin = zeros(UInt32, 65536, iters)
 
-    # Histogram for each element, radix
+    # a function to compute numeric value of two bytes to increment the count with
     function pre_getidx(vsi, j)
         (((vsi >> (j*2-1)*8) & 0xff)) | (((vsi >> (j*2-2)*8) & 0xff) << 8)
     end
@@ -21,6 +21,7 @@ function sorttwo_lsd16!(vs::AbstractVector{T}, index::AbstractVector{S}) where {
         Int(pre_getidx(vsi,j)) + 1
     end
 
+    # Histogram for each element, radix
     for i = 1:l
         for j = 1:iters
             # idx = Int((vs[i] >> (j-1)*16) & 0xffff) + 1
@@ -33,7 +34,6 @@ function sorttwo_lsd16!(vs::AbstractVector{T}, index::AbstractVector{S}) where {
     swaps = 0
     for j = iters:-1:1
         # Unroll first data iteration, check for degenerate case
-        # idx = Int((vs[l] >> (j-1)*16) & 0xff) + 1
         idx = getidx(vs[l], j)
 
         # are all values the same at this radix?
@@ -47,7 +47,6 @@ function sorttwo_lsd16!(vs::AbstractVector{T}, index::AbstractVector{S}) where {
 
         # Finish the loop...
         @inbounds for i in l-1:-1:1
-            # idx = Int((vs[i] >> (j-1)*16) & 0xffff) + 1
             idx = getidx(vs[i], j)
             ci = cbin[idx]
             ts[ci] = vs[i]

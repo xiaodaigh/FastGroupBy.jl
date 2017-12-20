@@ -20,9 +20,14 @@ function sorttwo_lsd!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T,
         end
     end
 
+    # function getidx(vsi, j)
+    #     Int((vsi >> (j-1)*8) & 0xff) + 1
+    # end
+
     # Sort!
     swaps = 0
     for j = iters:-1:1
+        # getidx.(vs,j)
         # Unroll first data iteration, check for degenerate case
         idx = Int((vs[l] >> (j-1)*8) & 0xff) + 1
 
