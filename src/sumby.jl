@@ -49,7 +49,7 @@ function sumby!(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Di
     elseif !isbits(T) || alg == :dict
         return sumby_dict(by, val)
     elseif nthreads() > 1
-        return sumby_multi_rs(by, val)
+        return sumby_multi_rs!(by, val)
     elseif l <= 50_000_000
         return sumby_radixsort!(by, val)
     else

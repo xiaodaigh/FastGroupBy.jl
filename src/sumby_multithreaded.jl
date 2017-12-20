@@ -24,7 +24,7 @@ function sumby_multi_rg!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T
     @threads for (ss, ee) in collect(zip(starts, ends))
         # @inbounds byv = @view by[ss:ee]
         # @inbounds valv = @view val[ss:ee]
-        @inbounds push!(res, sumby_radixgroup(by[ss:ee], val[ss:ee]))
+        @inbounds push!(res, sumby_radixgroup!(by[ss:ee], val[ss:ee]))
     end
 
     szero  = zero(S)
@@ -43,7 +43,7 @@ function sumby_multi_rs!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T
     @threads for (ss, ee) in collect(zip(starts, ends))
         # @inbounds byv = @view by[ss:ee]
         # @inbounds valv = @view val[ss:ee]
-        @inbounds push!(res, sumby_radixsort(by[ss:ee], val[ss:ee]))
+        @inbounds push!(res, sumby_radixsort!(by[ss:ee], val[ss:ee]))
     end
 
     szero  = zero(S)
@@ -62,7 +62,7 @@ function sumby_multi_van(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T
     @threads for (ss, ee) in collect(zip(starts, ends))
         # @inbounds byv = @view by[ss:ee]
         # @inbounds valv = @view val[ss:ee]
-        @inbounds push!(res, sumby(by[ss:ee], val[ss:ee]))
+        @inbounds push!(res, sumby!(by[ss:ee], val[ss:ee]))
     end
 
     szero  = zero(S)
