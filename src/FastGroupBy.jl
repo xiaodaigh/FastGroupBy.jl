@@ -27,10 +27,10 @@ import CategoricalArrays.CategoricalArray
 ##
 ##############################################################################
 
-export fastby, column, sumby
-export sumby_contiguous, sumby_dict, sumby_radixgroup
-export sumby_radixsort, sumby_sortperm, sumby
-export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
+export fastby, column, sumby, sumby!
+export sumby_contiguous, sumby_dict, sumby_radixgroup!
+export sumby_radixsort!, sumby_sortperm, sumby
+export sumby_multi_rs!, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
 export radixsort!
 
 ##############################################################################

@@ -19,32 +19,21 @@ sumby(by::AbstractVector  val::AbstractVector)
 
 ### Examples
 ```julia
-# Generate some data
-const N = 10_000_000
-const K = 100
-srand(1)
-@time idt = NDSparse(
-  Columns(row_id = [1:N;]),
-  Columns(
-    id = rand(1:K,N),
-    val = rand(round.(rand(K)*100,4), N)
-  ));
+using FastGroupBy
+using DataFrames, IndexedTables, Compat, BenchmarkTools
+import DataFrames.DataFrame
 
-# sumby is faster for NDSparses without nulls
-@elapsed NDSparses.aggregate_vec(sum, idt, by =(:id,), with = :val)
-@elapsed sumby(idt, :id, :val)
+const N = 10_000_000; const K = 100
 
-# sumby is also faster for DataFrame without nulls
-@elapsed idtdf = DataFrame(idt)
-@elapsed DataFrames.aggregate(idtdf, :id, sum)
-@elapsed sumby(idtdf, :id, :val)
-
-# or you can apply directly to vectors
-@elapsed sumby(column(idt, :id), column(idt, :val))
+# sumby is faster for DataFrame without missings
+srand(1);
+@time df = DataFrame(id = rand(1:Int(round(N/K)), N), val = rand(round.(rand(K)*100,4), N));
+@belapsed DataFrames.aggregate(df, :id, sum)
+@belapsed sumby(df, :id, :val)
 
 ```
 """
-function sumby(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S} where {T, S<:Number}
+function sumby!(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S} where {T, S<:Number}
     l = length(by)
 
     l == length(val) || throw(ErrorException("length of by and val must be the same"))
@@ -62,15 +51,15 @@ function sumby(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dic
     elseif nthreads() > 1
         return sumby_multi_rs(by, val)
     elseif l <= 50_000_000
-        return sumby_radixsort(by, val)
+        return sumby_radixsort!(by, val)
     else
         # return sumby_radixgroup(by, val)
-        return sumby_radixsort(by, val)
+        return sumby_radixsort!(by, val)
     end
 end
 
 "sumby by using radix and counting sort to group by; it's only a partial sort. It's faster for large by"
-function sumby_radixgroup(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)::Dict{T,S} where {T, S<:Number}
+function sumby_radixgroup!(by::AbstractVector{T},  val::AbstractVector{S}; cutsize = 2048)::Dict{T,S} where {T, S<:Number}
     by_sim = similar(by)
     val1=similar(val)
     o = Forward
@@ -177,7 +166,7 @@ function sumby_radixgroup(by::AbstractVector{T},  val::AbstractVector{S}; cutsiz
 end
 
 "sumby by sorting the by column using radixsort"
-function sumby_radixsort(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
+function sumby_radixsort!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
   by_sim = similar(by)
   val1=similar(val)
   lo = 1
@@ -329,4 +318,4 @@ function sumby(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S})
   return Dict(by.pool[i] => res[i] for i in S(1):S(l))
 end
 
-sumby(dt::Union{AbstractDataFrame, NDSparse}, by::Symbol, val::Symbol) = sumby(column(dt,by), column(dt,val))
+sumby!(dt::Union{AbstractDataFrame, NDSparse}, by::Symbol, val::Symbol) = sumby!(column(dt,by), column(dt,val))
