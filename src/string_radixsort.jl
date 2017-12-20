@@ -36,7 +36,7 @@ Radixsort on strings
 function radixsort!(svec::Vector{String})
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
     iters = ceil(lens/sizeof(UInt))
-    indexes = fcollect(length(svec))
+    # indexes = fcollect(length(svec))
     for i = iters:-1:1
         sorttwo_lsd16!(load_bits.(svec, Int(i-1)*sizeof(UInt)), svec)
     end
@@ -45,7 +45,7 @@ end
 function radixsort8!(svec::Vector{String})
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
     iters = ceil(lens/sizeof(UInt))
-    indexes = fcollect(length(svec))
+    # indexes = fcollect(length(svec))
     for i = iters:-1:1
         sorttwo_lsd!(load_bits.(svec, Int(i-1)*sizeof(UInt)), svec)
     end
