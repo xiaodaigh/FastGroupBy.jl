@@ -17,6 +17,8 @@ system.time(sort(id3, method="radix"))
 data.table::timetaken(pt) # 18.9, 20.6
 """
 
+# Roughly on par with R for length 8 id strings
+
 # using longer string to compare speed
 srand(1);
 svec1 = rand(["id"*dec(k,10) for k in 1:M÷K], M);
@@ -34,6 +36,7 @@ system.time(sort(id3, method="radix"))
 data.table::timetaken(pt) # 23.1
 """
 
+# Roughly on par with R for length 10 id strings; but is about 3 seconds slower
 
 # using longer string to compare speed
 srand(1);
@@ -53,3 +56,5 @@ pt = proc.time()
 system.time(sort(id3, method="radix"))
 data.table::timetaken(pt) #24.2
 """
+
+# Slow than R for length of 16; 1.7x times slower
