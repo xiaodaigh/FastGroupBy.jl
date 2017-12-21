@@ -34,7 +34,16 @@ Julia's do-notation can be used
 end;
 ```
 
-The `fastby!` works on string type as well
+The `fastby!` is fast on `Bool` as well
+```julia
+srand(1);
+x = rand(Bool, 100_000_000);
+y = rand(100_000_000);
+
+@time fastby!(sum, x, y)
+```
+
+The `fastby!` works on string type as well but is still slower than `countmap` and uses MUCH more RAM
 ```julia
 const M=10_000_000; const K=100;
 srand(1);
@@ -46,15 +55,6 @@ y = repeat([1], inner=length(svec1));
 #using StatsBase
 #@time b = countmap(svec1, alg = :dict);
 #[a[k]≈ b[k] for k in keys(a)] |> all
-```
-
-The `fastby!` is fast on `Bool` as well
-```julia
-srand(1);
-x = rand(Bool, 100_000_000);
-y = rand(100_000_000);
-
-@time fastby!(sum, x, y)
 ```
 
 
