@@ -13,7 +13,7 @@ srand(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 
-@time a = fastby!(sum, x,y);
+@time a = fastby!(sum, x, y);
 # using StatsBase
 # @time ac = countmap(x, weights(y));
 # [a[k] ≈ ac[k] for k in keys(a)] |> all # should be all equal
@@ -21,13 +21,13 @@ y = rand(100_000_000);
 @time a = fastby!(mean, x,y)
 ```
 
-One can use `fastby!` on arbitrary user defined functions 
+One can use `fastby!` on arbitrary user-defined functions 
 ```julia
 @time a = fastby!(yy -> sizeof.(yy), x, y);
 ```
 
-One can use take advantage of Julia's do-notation 
-``julia
+Julia's do-notation can be used
+```julia
 @time a = fastby!(x, y) do grouped_y
     # you can perform complex caculations here knowing that grouped_y is y grouped by x
     grouped_y[end] - grouped_y[1]
