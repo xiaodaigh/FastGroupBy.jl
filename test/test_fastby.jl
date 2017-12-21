@@ -1,6 +1,13 @@
 using Revise
 using FastGroupBy, BenchmarkTools
 srand(1);
+x = rand(Bool, 100_000_000);
+y = rand(100_000_000);
+
+@time fastby!(sum, x, y)
+
+
+srand(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time a = fastby!(sum,x,y);
@@ -21,6 +28,10 @@ y = rand(100_000_000);
 
 [a[k] ≈ b[k] for k in keys(a)] |> all
 
+
+@time a = fastby!(sum, x,y);
+@time ac = countmap(x, weights(y));
+[a[k] ≈ ac[k] for k in keys(a)] |> all
 
 srand(1);
 x = rand(1:1_000_000, 100_000_000);

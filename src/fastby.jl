@@ -1,13 +1,10 @@
 
-const BaseRadixSortSafeTypes = Union{Int8, Int16, Int32, Int64, Int128,
-                                     UInt8, UInt16, UInt32, UInt64, UInt128}
-                                     
-radixsort_safe(::Type{T}) where {T<:BaseRadixSortSafeTypes} = true
-radixsort_safe(::Type) = false
 
 
+"""
+Fast Group By algorithm
+"""
 function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T, S}
-    length(byvec) == length(valvec) || throw(DimensionMismatch())
     length(byvec) == length(valvec) || throw(DimensionMismatch())
     if issorted(byvec)
         h = _contiguousby(fn, byvec, valvec, outType)::Dict{T,outType}
@@ -20,16 +17,17 @@ end
 """
 Internal: single-function fastby
 """
-function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: BaseRadixSortSafeTypes, S}
+function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool}, S}
     l = length(byvec)
     grouptwo!(byvec, valvec)
     return _contiguousby(fn, byvec, valvec, outType)
 end
 
+
 """
 Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
 """
-function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: BaseRadixSortSafeTypes, S}
+function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool}, S}
     l = length(byvec)
     lastby = byvec[1]
     res = Dict{T,outType}()

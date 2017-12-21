@@ -38,6 +38,12 @@ export radixsort!
 ## Load files
 ##
 ##############################################################################
+const BaseRadixSortSafeTypes = Union{Int8, Int16, Int32, Int64, Int128,
+                                     UInt8, UInt16, UInt32, UInt64, UInt128}
+                                     
+radixsort_safe(::Type{T}) where {T<:BaseRadixSortSafeTypes} = true
+radixsort_safe(::Type) = false
+
 
 include("sumby.jl")
 include("sorttwo_lsd.jl")

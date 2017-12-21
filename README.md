@@ -7,13 +7,17 @@ The `fastby!` function is designed to allow the user to group by a vector and pr
 a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists that can compute the more specialised case
 
 ## `fastby!` with a fucntion
-The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap` with weights where `y` are the weights. You put in arbitrary functions
+The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap(x, weights(y))` with weights where `y` are the weights. You put in arbitrary functions
 ```julia
 srand(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 
-@time a = fastby!(sum, x,y)
+@time a = fastby!(sum, x,y);
+# using StatsBase
+# @time ac = countmap(x, weights(y));
+# [a[k] ≈ ac[k] for k in keys(a)] |> all # should be all equal
+
 @time a = fastby!(mean, x,y)
 ```
 
@@ -29,6 +33,16 @@ One can use take advantage of Julia's do-notation
     grouped_y[end] - grouped_y[1]
 end;
 ```
+
+The `fastby!` is fast on `Bool` as well
+```julia
+srand(1);
+x = rand(Bool, 100_000_000);
+y = rand(100_000_000);
+
+@time fastby!(sum, x, y)
+```
+
 
 # Faster string sort
 ```julia

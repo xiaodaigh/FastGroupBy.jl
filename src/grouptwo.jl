@@ -5,7 +5,7 @@ import SortingAlgorithms: RADIX_SIZE, RADIX_MASK
 # const RADIX_SIZE = 20
 # const RADIX_MASK = UInt(2^20-1)
 
-function grouptwo!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T,S}
+function grouptwo!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T <: BaseRadixSortSafeTypes,S}
     l = length(vs)
     if !isbits(T)
         error("Radix sort only sorts bits types (got $T)")
@@ -63,4 +63,41 @@ function grouptwo!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T,S}
         end
     end
     (vs, index)
+end
+
+function grouptwo!(vs::AbstractVector{Bool}, index::AbstractVector{S}) where S
+    l = length(vs)
+
+    ts = similar(vs)
+    index1 = similar(index)
+
+    # length of trues
+    truel = sum(vs)
+
+    # Sort!
+    if truel == l
+        res = (vs, index)
+    else
+        falsel = l
+        # Finish the loop...
+        @inbounds for i in l:-1:1
+            if vs[i]
+                ts[truel] = vs[i]
+                index1[truel] = index[i]
+                truel -= 1
+            else
+                ts[falsel] = vs[i]
+                index1[falsel] = index[i]
+                falsel -= 1
+            end
+        end
+
+        for i = 1:l
+            @inbounds vs[i] = ts[i]
+            @inbounds index[i] = index1[i]
+        end
+
+        res = (vs, index)
+    end
+    return res
 end
