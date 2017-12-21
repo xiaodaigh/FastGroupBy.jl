@@ -1,33 +1,55 @@
+using FastGroupBy
 
-const x = "id0000248523"
-using BenchmarkTools
-@benchmark hash.(svec) #17 seconds
-@benchmark load_bits.(svec) #3.2 seconds
+const M=100_000_000; const K=100;
+srand(1);
+svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M);
+@time radixsort!(svec1); #18, 18.6
+issorted(svec1);
 
-@time const a = load_bits.(svec)
-using SortingAlgorithms
-@time sort!(a, alg=RadixSort)
+R"""
+memory.limit(2e9)
+N=$M; K=$K
+set.seed(1)
+library(data.table)
+id3 = sample(sprintf("i%07d",1:(N/K)), N, TRUE)
+pt = proc.time()
+system.time(sort(id3, method="radix"))
+data.table::timetaken(pt) # 18.9, 20.6
+"""
+
+# using longer string to compare speed
+srand(1);
+svec1 = rand(["id"*dec(k,10) for k in 1:M÷K], M);
+@time radixsort!(svec1); # 26.89
+issorted(svec1);
+
+R"""
+memory.limit(2e9)
+N=$M; K=$K
+set.seed(1)
+library(data.table)
+id3 = sample(sprintf("i%010d",1:(N/K)), N, TRUE)
+pt = proc.time()
+system.time(sort(id3, method="radix"))
+data.table::timetaken(pt) # 23.1
+"""
 
 
-srand(1)
-svec = rand(["id"*dec(k,10) for k in 1:M÷K], M)
-@sort svec
-@time radixsort!()
+# using longer string to compare speed
+srand(1);
+svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M);
+# using FastGroupBy.radixsort! to sort strings of length 16
+@time radixsort!(svec1); # 41 seconds on 100m
+issorted(svec1)
 
-
-
-# the most economical is too load the machinesize
-@benchmark load_bits(x)!
-@benchmark load_bits(UInt128, x)
-@benchmark load_bits(UInt32, x)
-
-@benchmark load_bits(x, 8)
-@benchmark load_bits(UInt128, x, 8)
-@benchmark load_bits(UInt128, x, 8)
-
-@benchmark hash(x)
-@benchmark Vector{UInt8}(x)
-
-load_bits(x)
-load_bits(UInt128, x)
-load_bits(UInt32, x)
+R"""
+memory.limit(2e9)
+N=$M; K=$K
+set.seed(1)
+library(data.table)
+bs = sapply(1:(N/K), function(i) rawToChar(sample(as.raw(32:126), sample(16), replace=T)))
+id3 = sample(bs, N, replace = T)
+pt = proc.time()
+system.time(sort(id3, method="radix"))
+data.table::timetaken(pt) #24.2
+"""

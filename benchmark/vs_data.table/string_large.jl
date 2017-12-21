@@ -30,12 +30,12 @@ df = DataFrame(id_str_large = rand(["id"*dec(k,10) for k = 1:Int(N/K)],N) , val 
 x1 = @elapsed sumby!(df, :id_str_large, :val);
 
 
-
-id_str_large = rand(["id"*dec(k,10) for k = 1:Int(N/K)],N);
-val = rand(round.(rand(K)*100,4), N);
-x2 = @elapsed fastby!(sum, id_str_large, val)
+# this is way too slow
+# id_str_large = rand(["id"*dec(k,10) for k = 1:Int(N/K)],N);
+# val = rand(round.(rand(K)*100,4), N);
+# x2 = @elapsed fastby!(sum, id_str_large, val)
 
 x
 x1
-x2
+# x2 
 x1/parse(Float64, x[1:end-3])
