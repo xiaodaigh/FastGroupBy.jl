@@ -1,6 +1,3 @@
-
-
-
 """
 Fast Group By algorithm
 """
@@ -17,7 +14,7 @@ end
 """
 Internal: single-function fastby
 """
-function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool}, S}
+function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
     l = length(byvec)
     grouptwo!(byvec, valvec)
     return _contiguousby(fn, byvec, valvec, outType)
@@ -27,7 +24,7 @@ end
 """
 Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
 """
-function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool}, S}
+function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
     l = length(byvec)
     lastby = byvec[1]
     res = Dict{T,outType}()

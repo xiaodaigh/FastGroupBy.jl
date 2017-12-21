@@ -5,40 +5,12 @@ function load_bits(::Type{T}, s::String, skipbytes = 0) where T<:Unsigned
     # if n < skipbytes
     #     return zero(T)
     # else
-        ns = sizeof(T) - min(8, n - skipbytes)
+        ns = (sizeof(T) - min(8, n - skipbytes))*8
         h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
         h = h << ns
         h = h >> ns
         return h
     # end
-end
-
-# load_bits2(s::String, skipbytes = 0) = load_bits2(UInt, s, skipbytes)
-# function load_bits2(::Type{T}, s::String, skipbytes = 0) where T<:Unsigned
-#     n = sizeof(s)
-#     ns = n - skipbytes
-
-#     h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
-#     h = (h << (ns)) >>  (ns)
-
-#     return h
-# end
-
-
-# from https://discourse.julialang.org/t/whats-the-fastest-way-to-generate-1-2-n/7564/15?u=xiaodai
-using Base.Threads
-function fcollect(N::Integer, T = Int)
-    nt = nthreads()
-    n,r = divrem(N,nt)
-    a = Vector{T}(N)
-    @threads for i=1:nt
-        ioff = (i-1)*n
-        nn = ifelse(i == nt, n+r, n)
-        @inbounds for j=1:nn
-            a[ioff+j] = ioff+j
-        end
-    end
-    a
 end
 
 """

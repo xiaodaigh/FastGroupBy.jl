@@ -101,3 +101,27 @@ function grouptwo!(vs::AbstractVector{Bool}, index::AbstractVector{S}) where S
     end
     return res
 end
+
+function grouptwo!(byvec::AbstractVector{String}, valvec::AbstractVector{S}) where S
+    lens = reduce((x,y) -> max(x,sizeof(y)), 0, byvec)
+    iters = ceil(lens/sizeof(UInt))
+    indexes = fcollect(length(byvec))
+    for i = iters:-1:1
+        # compute the bit representation for the next 8 bytes
+        bitsrep = load_bits.(byvec, Int(i-1)*sizeof(UInt))
+        if i == iters
+            grouptwo!(bitsrep, indexes)
+        else
+            grouptwo!(@view(bitsrep[indexes]), indexes)
+        end
+    end
+
+    byvec1 = byvec[indexes]
+    valvec1 = valvec[indexes]
+
+    for i = 1:length(byvec)
+        @inbounds byvec[i] = byvec1[i]
+        @inbounds valvec[i] = valvec1[i]
+    end
+    (byvec, valvec)
+end

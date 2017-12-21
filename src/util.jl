@@ -24,8 +24,9 @@ function select(col::Symbol)
   end
 end
 
-"https://discourse.julialang.org/t/whats-the-fastest-way-to-generate-1-2-n/7564/15"
-function fcollect(N,T=Int)
+# from https://discourse.julialang.org/t/whats-the-fastest-way-to-generate-1-2-n/7564/15?u=xiaodai
+using Base.Threads
+function fcollect(N::Integer, T = Int)
     nt = nthreads()
     n,r = divrem(N,nt)
     a = Vector{T}(N)

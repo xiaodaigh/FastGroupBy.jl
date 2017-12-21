@@ -34,6 +34,20 @@ Julia's do-notation can be used
 end;
 ```
 
+The `fastby!` works on string type as well
+```julia
+const M=10_000_000; const K=100;
+srand(1);
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+# using FastGroupBy.radixsort! to sort strings of length 8
+y = repeat([1], inner=length(svec1));
+@time a = fastby!(sum, svec1, y);
+
+#using StatsBase
+#@time b = countmap(svec1, alg = :dict);
+#[a[k]≈ b[k] for k in keys(a)] |> all
+```
+
 The `fastby!` is fast on `Bool` as well
 ```julia
 srand(1);
