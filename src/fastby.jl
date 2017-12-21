@@ -1,39 +1,70 @@
-function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T, S}
+
+const BaseRadixSortSafeTypes = Union{Int8, Int16, Int32, Int64, Int128,
+                                     UInt8, UInt16, UInt32, UInt64, UInt128}
+                                     
+radixsort_safe(::Type{T}) where {T<:BaseRadixSortSafeTypes} = true
+radixsort_safe(::Type) = false
+
+
+function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T, S}
     length(byvec) == length(valvec) || throw(DimensionMismatch())
-    isbits(T) || throw(ErrorException("vector type is not bits"))
-    _fastby!(fn, byvec, valvec)
+    length(byvec) == length(valvec) || throw(DimensionMismatch())
+    if issorted(byvec)
+        h = _contiguousby(fn, byvec, valvec, outType)::Dict{T,outType}
+    else
+        h = _fastby!(fn, byvec, valvec, outType)::Dict{T,outType}
+    end
+    return h
 end
 
-# hello
-function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T, S}
-    _fastby!(byvec, valvec, [fn], [outputType])
-    # l = length(byvec)
-    # grouptwo!(byvec, valvec)
-    # lastby = byvec[1]
-    #
-    # res = Dict{T,outputType}()
-    #
-    # j = 1
-    #
-    # for i = 2:l
-    #     @inbounds byval = byvec[i]
-    #     if byval != lastby
-    #         @inbounds res[lastby] = fn(@view(valvec[j:i-1]))::outputType
-    #         j = i
-    #         @inbounds lastby = byvec[i]
-    #     end
-    # end
-    #
-    # @inbounds res[byvec[l]] = fn(@view valvec[j:l])::outputType
-    # return res
+"""
+Internal: single-function fastby
+"""
+function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: BaseRadixSortSafeTypes, S}
+    l = length(byvec)
+    grouptwo!(byvec, valvec)
+    return _contiguousby(fn, byvec, valvec, outType)
 end
 
-function _fastby!(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outputType::Vector{DataType} = [S for i = 1:length(fn)]) where {T, S}
+"""
+Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
+"""
+function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: BaseRadixSortSafeTypes, S}
+    l = length(byvec)
+    lastby = byvec[1]
+    res = Dict{T,outType}()
+
+    j = 1
+
+    for i = 2:l
+        @inbounds byval = byvec[i]
+        if byval != lastby
+            viewvalvec = @view valvec[j:i-1]
+            try
+                @inbounds res[lastby] = fn(viewvalvec)
+            catch e
+                @show fn(viewvalvec)
+            end
+            j = i
+            @inbounds lastby = byvec[i]
+        end
+    end
+
+    viewvalvec = @view valvec[j:l]
+    @inbounds res[byvec[l]] = fn(viewvalvec)
+    return res
+end
+
+
+"""
+Internal multi-function fastby
+"""
+function _fastby!(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T <: BaseRadixSortSafeTypes, S}
     l = length(byvec)
     grouptwo!(byvec, valvec)
     lastby = byvec[1]
 
-    res = Dict{T,Tuple{outputType...}}()
+    res = Dict{T}()
 
     j = 1
 
@@ -52,92 +83,4 @@ function _fastby!(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::Abstra
     return res
 end
 
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time a = _fastby!(x,y, sum)
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time a = _fastby!(x,y, sum)
 
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time a = fastby!(x,y, sum)
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time a = fastby!(x,y, sum)
-
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time a = sumby_radixsort(x,y)
-
-function fastby(byvec::AbstractVector{T}, valvec::AbstractVector{S}, fn::Vector{Function}) where {T, S}
-end
-
-x,y = rand(1:5,100), rand(100)
-a = fastby!(copy(x),copy(y), sum)
-b = sumby(copy(x),copy(y))
-
-[abs(a[k1]-b[k1]) < 0.00000000001 for k1 in keys(a)] |> all
-
-using BenchmarkTools
-
-function abc()
-    x = rand(1:1_000_000, 100_000_000)
-    y = rand(100_000_000)
-    @elapsed a = fastby!(x,y, sum)
-end
-
-function abc1()
-    x = rand(1:1_000_000, 100_000_000)
-    y = rand(100_000_000)
-    @elapsed a = fastby!(x,y, sum, Float64)
-end
-
-function def()
-    x = rand(1:1_000_000, 100_000_000)
-    y = rand(100_000_000)
-    @elapsed b = sumby_radixsort(x,y)
-end
-
-srand(1)
-aa = [abc() for i = 1:5]
-
-srand(1)
-bb = [def() for i =1:5]
-
-srand(1)
-c = [abc1() for i =1:5]
-
-aa |> mean
-bb |> mean
-c |> mean
-
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time a = _fastby!(x,y, sum)
-
-srand(1)
-x = rand(1:1_000_000, 100_000_000)
-y = rand(100_000_000)
-@time b = sumby_radixsort(x,y)
-
-@code_warntype fastby!(x,y, sum)
-
-@code_warntype _fastby!(x,y, sum, Float64)
-
-srand(1)
-function hihi()
-    x = rand(1:1_000_000, 100_000_000)
-    y = rand(100_000_000)
-    @elapsed a = _fastby!(x,y, [sum, mean])
-end
-
-srand(1)
-hi = [hihi() for i =1:5]
-mean(hi)

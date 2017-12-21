@@ -1,6 +1,34 @@
 # FastGroupBy
 
-Fast algorithms for doing group-by. Currently only `sumby` is implemented
+Faster algorithms for doing group-by.
+
+# `fastby!`
+The `fastby!` function is designed to allow the user to group by a vector and produce 
+a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists that can compute the more specialised case
+
+## `fastby!` with a fucntion
+The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap` with weights where `y` are the weights. You put in arbitrary functions
+```julia
+srand(1);
+x = rand(1:1_000_000, 100_000_000);
+y = rand(100_000_000);
+
+@time a = fastby!(sum, x,y)
+@time a = fastby!(mean, x,y)
+```
+
+One can use `fastby!` on arbitrary user defined functions 
+```julia
+@time a = fastby!(yy -> sizeof.(yy), x, y);
+```
+
+One can use take advantage of Julia's do-notation 
+``julia
+@time a = fastby!(x, y) do grouped_y
+    # you can perform complex caculations here knowing that grouped_y is y grouped by x
+    grouped_y[end] - grouped_y[1]
+end;
+```
 
 # Faster string sort
 ```julia
