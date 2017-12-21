@@ -38,6 +38,9 @@ srand(1);
 df = DataFrame(id = rand(Int32(1):Int32(round(N/K)), N), id_small = rand(Int8(1):Int8(K),N), val = rand(round.(rand(K)*100,4), N));
 y1 = @elapsed sumby!(df, :id, :val);
 
+y
+y1
 
 x1/parse(Float64, x[1:end-3])
 y1/parse(Float64, y[1:end-3])
+
