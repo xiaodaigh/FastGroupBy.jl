@@ -4,10 +4,12 @@ Faster algorithms for doing group-by.
 
 # `fastby!`
 The `fastby!` function is designed to allow the user to group by a vector and produce 
-a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists that can compute the more specialised case of sum-by faster
+a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists, it can compute the more specialised case of sum-by faster
 
 ## `fastby!` with a fucntion
-The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap(x, weights(y))` with weights where `y` are the weights. You put in arbitrary functions
+The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap(x, weights(y))`. 
+
+You can also compute arbitrary functions e.g. `mean`
 ```julia
 srand(1);
 x = rand(1:1_000_000, 100_000_000);
@@ -34,7 +36,7 @@ Julia's do-notation can be used
 end;
 ```
 
-The `fastby!` is fast on `Bool` as well
+The `fastby!` is fast if group by a vector of `Bool`'s as well
 ```julia
 srand(1);
 x = rand(Bool, 100_000_000);
@@ -43,7 +45,7 @@ y = rand(100_000_000);
 @time fastby!(sum, x, y)
 ```
 
-The `fastby!` works on string type as well but is still slower than `countmap` and uses MUCH more RAM
+The `fastby!` works on string type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is not recommended.
 ```julia
 const M=10_000_000; const K=100;
 srand(1);
