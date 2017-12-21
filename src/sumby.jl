@@ -49,7 +49,7 @@ function sumby!(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Di
     elseif !isbits(T) || alg == :dict
         return sumby_dict(by, val)
     elseif nthreads() > 1
-        return sumby_multi_rs!(by, val)
+        return sumby_multi_rs(by, val)
     elseif l <= 50_000_000
         return sumby_radixsort!(by, val)
     else
@@ -167,18 +167,20 @@ end
 
 "sumby by sorting the by column using radixsort"
 function sumby_radixsort!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
-  by_sim = similar(by)
-  val1=similar(val)
-  lo = 1
+  
   hi = length(by)
 
   if hi == 0;  return Dict{T,S}();
   elseif hi == 1;  return Dict{T,S}(by[1] => val[1]);  end
 
+  by_sim = similar(by)
+  val1=similar(val)
+  lo = 1
+
   # Make sure we're sorting a bits type
   #TT = Base.Order.ordtype(o, by)
   if !isbits(T)
-      error("Radix sort only sorts bits types (got $T)")
+      throw(error("Radix sort only sorts bits types (got $T)"))
   end
 
   # Init

@@ -18,7 +18,7 @@ function blockranges(nblocks, total_len)
     starts[1:end-1], ends
 end
 
-function sumby_multi_rg!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T,S <: Number} 
+function sumby_multi_rg(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T,S <: Number} 
     (starts, ends) = blockranges(nthreads(), length(by))
     res = Dict{T,S}[]
     @threads for (ss, ee) in collect(zip(starts, ends))
@@ -37,7 +37,7 @@ function sumby_multi_rg!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T
     return res_fnl
 end
 
-function sumby_multi_rs!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T,S <: Number}
+function sumby_multi_rs(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T,S <: Number}
     (starts, ends) = blockranges(nthreads(), length(by))
     res = Dict{T,S}[]
     @threads for (ss, ee) in collect(zip(starts, ends))
