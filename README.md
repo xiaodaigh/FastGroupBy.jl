@@ -4,7 +4,7 @@ Faster algorithms for doing group-by.
 
 # `fastby!`
 The `fastby!` function is designed to allow the user to group by a vector and produce 
-a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists that can compute the more specialised case
+a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists that can compute the more specialised case of sum-by faster
 
 ## `fastby!` with a fucntion
 The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap(x, weights(y))` with weights where `y` are the weights. You put in arbitrary functions
