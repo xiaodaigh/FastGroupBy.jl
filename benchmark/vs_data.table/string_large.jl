@@ -2,7 +2,7 @@ using Revise
 
 using RCall
 
-const N = Int(2e8); const K = 100;
+const N = Int(1e8); const K = 100;
 
 
 R"""
@@ -39,3 +39,10 @@ x
 x1
 # x2 
 x1/parse(Float64, x[1:end-3])
+
+srand(1);
+df = DataFrame(id_str_large = rand(["id"*dec(k,10) for k = 1:Int(N/K)],N) , val = rand(round.(rand(K)*100,4), N));
+using StatsBase
+x3 = @elapsed countmap(df[:id_str_large], weights(df[:val]));
+
+x3/parse(Float64, x[1:end-3])
