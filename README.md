@@ -1,15 +1,35 @@
 # FastGroupBy
 
-Faster algorithms for doing group-by.
+Faster algorithms for doing vector group-by.
 
 # `fastby!`
-The `fastby!` function is designed to allow the user to group by a vector and produce 
-a `Dict` as the output. The function `fn` is the first argument and can be used to produce arbitrary outputs. A more specialised `sumby` function exists, it can compute the more specialised case of sum-by faster
+The `fastby!` function allows the user to group by a vector and produce 
+a `Dict` as the output. 
 
-## `fastby!` with a fucntion
-The `fastby!(sum, x,y)` is equivalent to `StatsBase`'s `countmap(x, weights(y))`. 
+It can be used like this
 
-You can also compute arbitrary functions e.g. `mean`
+```julia
+fastby!(fn, byvec, valvec)
+```
+
+* where the first argument `fn` is a function `fn`,
+* `byvec` is the vector to group by
+* `valvec` is the vector that `fn` is applied to
+
+For example `fastby!(sum, byvec, valvec)` is equivalent to `StatsBase`'s `countmap(byvec, weights(valvec))`. Consider the below
+```julia
+byvec  = [88, 888, 8, 88, 888, 88]
+valvec = [1 , 2  , 3, 4 , 5  , 6]
+```
+to compute the sum value of `valvec` in each group of `byvec` we do
+```julia
+grpsum = fastby!(sum, byvec, valvec)
+expected_result = Dict(88 => 11, 8 => 3, 888 => 7)
+grpmean == expected_result
+```
+
+## `fastby!` with an arbitrary `fn`
+You can also compute arbitrary functions for each by-group e.g. `mean`
 ```julia
 srand(1);
 x = rand(1:1_000_000, 100_000_000);
@@ -20,11 +40,13 @@ y = rand(100_000_000);
 # @time ac = countmap(x, weights(y));
 # [a[k] ≈ ac[k] for k in keys(a)] |> all # should be all equal
 
-@time a = fastby!(mean, x,y)
+@time a = fastby!(mean, x, y)
 ```
 
-One can use `fastby!` on arbitrary user-defined functions 
+This generalizes to arbitrary user-defined functions e.g. the below computes the `sizeof` each element within each by group
 ```julia
+byvec  = [88   , 888  , 8  , 88  , 888 , 88]
+valvec = ["abc", "def", "g", "hi", "jk", "lmop"]
 @time a = fastby!(yy -> sizeof.(yy), x, y);
 ```
 
@@ -45,7 +67,7 @@ y = rand(100_000_000);
 @time fastby!(sum, x, y)
 ```
 
-The `fastby!` works on string type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is not recommended.
+The `fastby!` works on string type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
 ```julia
 const M=10_000_000; const K=100;
 srand(1);
@@ -59,8 +81,7 @@ y = repeat([1], inner=length(svec1));
 #[a[k]≈ b[k] for k in keys(a)] |> all
 ```
 
-
-# Faster string sort
+# Faster string sort (in limited cases)
 ```julia
 # Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 using FastGroupBy
@@ -96,12 +117,9 @@ using FastGroupBy
 
 const M=100_000_000; const K=100
 srand(1)
-svec1 = rand(["id"*dec(k,10) for k in 1:M÷K], M)
-@time radixsort!(svec1) #18 seconds
+svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
+@time radixsort!(svec1) #13 seconds
 issorted(svec1)
-
-#svec1 = rand(["i"*dec(k,7) for k in 1:M÷K], M)
-#@time sort!(svec1)
 ```
 
 ```r
@@ -114,10 +132,13 @@ system.time(sort(id3, method="radix"))
 data.table::timetaken(pt) # 18.9 seconds
 ```
 
-# sumby
+# sumby!
+The `sumby!` is a special case of `fastby!` in fact its results are the the same as `fastby!(sum, etc1, etc2)`. It is slightly faster than `fastby!`. 
+
 ```julia
 # install FastGroupBy.jl
-Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
+# Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
+Pkg.add("FastGroupBy")
 
 using FastGroupBy
 using DataFrames, IndexedTables, Compat, BenchmarkTools
@@ -125,9 +146,13 @@ import DataFrames.DataFrame
 
 const N = 10_000_000; const K = 100
 
-# sumby is also faster for DataFrame without missings
+# `sumby!` is faster than `DataFrame.aggregate`
 srand(1);
-df = DataFrame(id = rand(1:Int(round(N/K)), N), val = rand(round.(rand(K)*100,4), N));
-@time DataFrames.aggregate(df, :id, sum) # 3.3 seconds
-@time sumby!(df, :id, :val) # 0.4
+id = rand(1:Int(round(N/K)), N);
+val = rand(round.(rand(K)*100,4), N);
+df = DataFrame(id = id, val = val);
+@time x = DataFrames.aggregate(df, :id, sum); # 3.3 seconds
+@time y = sumby!(df, :id, :val); # 0.4
+xdict = Dict(zip(x[:id],x[:val_sum]))
+length(xdict) == length(y) && [xdict[k] ≈ y[k] for k in keys(xdict)] |> all
 ```
