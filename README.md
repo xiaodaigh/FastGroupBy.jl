@@ -1,6 +1,13 @@
 # FastGroupBy
 
-Faster algorithms for doing vector group-by.
+Faster algorithms for doing vector group-by. You can install it using
+
+```julia
+# install
+Pkg.add("FastGroupBy")
+# install latest version
+Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
+```
 
 # `fastby!`
 The `fastby!` function allows the user to group by a vector and produce 
