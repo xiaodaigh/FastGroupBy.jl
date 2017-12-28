@@ -13,7 +13,8 @@ fastby!(fn, byvec, valvec)
 ```
 
 * `fn` is a function `fn` to be applied to eacj by-group of `valvec`
-* `byvec` is the vector to group by
+* `byvec` is the vector to group by; `eltype(byvec)` must be one of these `Bool, Int8, Int16, Int32, Int64, Int128,
+                                     UInt8, UInt16, UInt32, UInt64, UInt128, String`
 * `valvec` is the vector that `fn` is applied to
 
 For example `fastby!(sum, byvec, valvec)` is equivalent to `StatsBase`'s `countmap(byvec, weights(valvec))`. Consider the below
