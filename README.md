@@ -58,18 +58,17 @@ y = rand(100_000_000);
 @time fastby!(sum, x, y)
 ```
 
-The `fastby!` works on string type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
+The `fastby!` works on `String` type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
 ```julia
 const M=10_000_000; const K=100;
 srand(1);
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
-# using FastGroupBy.radixsort! to sort strings of length 8
 y = repeat([1], inner=length(svec1));
 @time a = fastby!(sum, svec1, y);
 
-#using StatsBase
-#@time b = countmap(svec1, alg = :dict);
-#[a[k]≈ b[k] for k in keys(a)] |> all
+using StatsBase
+@time b = countmap(svec1, alg = :dict);
+[a[k] ≈ b[k] for k in keys(a)] |> all # true
 ```
 
 # Faster string sort (in limited cases)
