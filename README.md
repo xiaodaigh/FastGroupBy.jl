@@ -6,13 +6,13 @@ Faster algorithms for doing vector group-by.
 The `fastby!` function allows the user to group by a vector and produce 
 a `Dict` as the output. 
 
-It can be used like this
+The function has three main arguments
 
 ```julia
 fastby!(fn, byvec, valvec)
 ```
 
-* where the first argument `fn` is a function `fn`,
+* `fn` is a function `fn` to be applied to eacj by-group of `valvec`
 * `byvec` is the vector to group by
 * `valvec` is the vector that `fn` is applied to
 
@@ -25,21 +25,12 @@ to compute the sum value of `valvec` in each group of `byvec` we do
 ```julia
 grpsum = fastby!(sum, byvec, valvec)
 expected_result = Dict(88 => 11, 8 => 3, 888 => 7)
-grpmean == expected_result
+grpsum == expected_result # true
 ```
 
 ## `fastby!` with an arbitrary `fn`
 You can also compute arbitrary functions for each by-group e.g. `mean`
 ```julia
-srand(1);
-x = rand(1:1_000_000, 100_000_000);
-y = rand(100_000_000);
-
-@time a = fastby!(sum, x, y);
-# using StatsBase
-# @time ac = countmap(x, weights(y));
-# [a[k] ≈ ac[k] for k in keys(a)] |> all # should be all equal
-
 @time a = fastby!(mean, x, y)
 ```
 
