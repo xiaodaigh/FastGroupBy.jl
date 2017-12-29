@@ -105,28 +105,28 @@ function grouptwo!(vs::AbstractVector{Bool}, index::AbstractVector{S}) where S
 end
 
 function grouptwo!(byvec::AbstractVector{String}, valvec::AbstractVector{S}, pointer_type = UInt) where S
-    lens = reduce((x,y) -> max(x,sizeof(y)), 0, byvec)
+    @time lens = reduce((x,y) -> max(x,sizeof(y)), 0, byvec)
     iters = ceil(lens/sizeof(pointer_type))
-    indexes = fcollect(length(byvec))
+    @time indexes = fcollect(length(byvec))
     for i = iters:-1:1
         # compute the bit representation for the next 8 bytes
-        bitsrep = load_bits.(byvec, Int(i-1)*sizeof(pointer_type))
+        @time bitsrep = load_bits.(byvec, Int(i-1)*sizeof(pointer_type))
         if i == iters
-            grouptwo!(bitsrep, indexes)
+            @time grouptwo!(bitsrep, indexes)
         else
             # grouptwo!(@view(bitsrep[indexes]), indexes)
-            grouptwo!(bitsrep[indexes], indexes)
+            @time grouptwo!(bitsrep[indexes], indexes)
         end
     end
 
-    # return (byvec[indexes], valvec[indexes])
+    return (byvec[indexes], valvec[indexes])
 
-    byvec1 = byvec[indexes]
-    valvec1 = valvec[indexes]
+    # byvec1 = byvec[indexes]
+    # valvec1 = valvec[indexes]
 
-    for i = 1:length(byvec)
-        @inbounds byvec[i] = byvec1[i]
-        @inbounds valvec[i] = valvec1[i]
-    end
-    (byvec, valvec)
+    # for i = 1:length(byvec)
+    #     @inbounds byvec[i] = byvec1[i]
+    #     @inbounds valvec[i] = valvec1[i]
+    # end
+    # (byvec, valvec)
 end

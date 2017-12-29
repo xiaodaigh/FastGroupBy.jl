@@ -16,14 +16,14 @@
 
 load_bits(s::String, skipbytes = 0) = load_bits(UInt, s, skipbytes)
 
-function load_bits(::Type{T}, s::String, skipbytes = 0) where T
+function load_bits(::Type{T}, s::String, skipbytes = 0) where T<:Unsigned
     n = sizeof(s)
     if n < skipbytes
         return zero(T)
-    elseif n - skipbytes >= sizeof(T)
+    elseif n - skipbytes >= 8
         return unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
     else
-        ns = (sizeof(T) - min(sizeof(T), n - skipbytes))*8
+        ns = (sizeof(T) - min(8, n - skipbytes))*8
         h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
         # h = unsafe_load(Ptr{T}(pointer(s)+skipbytes))
         h = h << ns
@@ -68,11 +68,6 @@ Radixsort on strings
 
     svec - a vector of strings; sorts it by bits
 """
-<<<<<<<
-radixsort!(svec::Vector{String}) = radixsort!(UInt, svec::Vector{String})
-
-function radixsort!(T, svec::Vector{String})
-=======
 function radixsort_ntoh!(svec::Vector{String}, skipbytes = 0, pointer_type = UInt)
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
     iters = ceil(lens*8/SortingAlgorithms.RADIX_SIZE)
@@ -86,11 +81,10 @@ end
 
 
 function radixsort!(svec::Vector{String})
->>>>>>>
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
-    iters = ceil(lens/sizeof(T))
+    iters = ceil(lens/sizeof(UInt))
     for i = iters:-1:1
-        sorttwo_lsd16!(load_bits.(T, svec, Int(i-1)*sizeof(T)), svec)
+        sorttwo_lsd16!(load_bits.(svec, Int(i-1)*sizeof(UInt)), svec)
     end
 end
 

@@ -31,7 +31,7 @@ export fastby!, column, sumby, sumby!
 export sumby_contiguous, sumby_dict, sumby_radixgroup!
 export sumby_radixsort!, sumby_sortperm, sumby
 export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
-export radixsort!, radixsort8!, UInt24, UInt192
+export radixsort!, radixsort8!
 
 ##############################################################################
 ##
@@ -54,6 +54,5 @@ include("util.jl")
 include("grouptwo.jl")
 include("string_radixsort.jl")
 include("fastby.jl")
-include("various_unsigned.jl")
 
 end # module FastGroupBy
