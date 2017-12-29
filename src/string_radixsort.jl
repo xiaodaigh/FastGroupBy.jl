@@ -1,11 +1,11 @@
 load_bits(s::String, skipbytes = 0) = load_bits(UInt, s, skipbytes)
 
-function load_bits(::Type{T}, s::String, skipbytes = 0) where T<:Unsigned
+function load_bits(::Type{T}, s::String, skipbytes = 0) where T
     n = sizeof(s)
     # if n < skipbytes
     #     return zero(T)
     # else
-        ns = (sizeof(T) - min(8, n - skipbytes))*8
+        ns = (sizeof(T) - min(sizeof(T), n - skipbytes))*8
         h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
         h = h << ns
         h = h >> ns
@@ -20,11 +20,13 @@ Radixsort on strings
 
     svec - a vector of strings; sorts it by bits
 """
-function radixsort!(svec::Vector{String})
+radixsort!(svec::Vector{String}) = radixsort!(UInt, svec::Vector{String})
+
+function radixsort!(T, svec::Vector{String})
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
-    iters = ceil(lens/sizeof(UInt))
+    iters = ceil(lens/sizeof(T))
     for i = iters:-1:1
-        sorttwo_lsd16!(load_bits.(svec, Int(i-1)*sizeof(UInt)), svec)
+        sorttwo_lsd16!(load_bits.(T, svec, Int(i-1)*sizeof(T)), svec)
     end
 end
 

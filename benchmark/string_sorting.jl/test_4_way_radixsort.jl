@@ -1,6 +1,8 @@
-const N = 100_000_000; const K = 100
+using InternedStrings
+const N = 1_000_000; const K = 100
 srand(1);
-svec = rand([string(rand(Char.(97:97+25), rand(1:8))...) for k in 1:N÷K], N);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:8))...) for k in 1:N÷K]
+@time svec = rand(sample_space, N);
 
 include("src/three_way_radix_quick_sort.jl")
 

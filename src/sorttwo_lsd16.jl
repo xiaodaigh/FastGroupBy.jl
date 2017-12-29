@@ -4,6 +4,7 @@ significant digit (lsd) fashion. Good for sortperm implemenations
 """
 function sorttwo_lsd16!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T,S}
     l = length(vs)
+    mask = mask16bit(T)
 
     ts = similar(vs)
     index1 = similar(index)
@@ -13,12 +14,8 @@ function sorttwo_lsd16!(vs::AbstractVector{T}, index::AbstractVector{S}) where {
     bin = zeros(UInt32, 65536, iters)
 
     # a function to compute numeric value of two bytes to increment the count with
-    function pre_getidx(vsi, j)
-        (((vsi >> (j*2-1)*8) & 0xff)) | (((vsi >> (j*2-2)*8) & 0xff) << 8)
-    end
-
     function getidx(vsi, j)
-        Int(pre_getidx(vsi,j)) + 1
+        Int(Base.bswap(UInt16((vsi >> (j-1)*16) & mask))) + 1
     end
 
     # Histogram for each element, radix
