@@ -10,8 +10,7 @@ Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 ```
 
 # `fastby!`
-The `fastby!` function allows the user to group by a vector and produce 
-a `Dict` as the output. 
+The `fastby!` function allows the user perform some computation to a vector (`valvec`) group by another vector (`byvec`). Its output is a `Dict` whose keys are the distinct groups and the values are the output are the results of applying the function on the `valvec`.
 
 The function has three main arguments
 
@@ -19,7 +18,7 @@ The function has three main arguments
 fastby!(fn, byvec, valvec)
 ```
 
-* `fn` is a function `fn` to be applied to eacj by-group of `valvec`
+* `fn` is a function `fn` to be applied to each by-group of `valvec`
 * `byvec` is the vector to group by; `eltype(byvec)` must be one of these `Bool, Int8, Int16, Int32, Int64, Int128,
                                      UInt8, UInt16, UInt32, UInt64, UInt128, String`
 * `valvec` is the vector that `fn` is applied to
