@@ -10,7 +10,7 @@ Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 ```
 
 # `fastby!`
-The `fastby!` function allows the user perform some computation on a vector (`valvec`) grouped by another vector (`byvec`). Its output is a `Dict` whose `Dict`-keys are the distinct groups and the `Dict`-values are the results of applying the function on the `valvec`.
+The `fastby!` function allows the user to perform arbitrary computation on a vector (`valvec`) grouped by another vector (`byvec`). Its output is a `Dict` whose `Dict`-keys are the distinct groups and the `Dict`-values are the results of applying the function on the `valvec`.
 
 The function has three main arguments
 
