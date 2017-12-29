@@ -7,6 +7,28 @@ srand(1);
 @time radixsort!(UInt192,svec)
 issorted(svec)
 
+using FastGroupBy
+import FastGroupBy.mask16bit
+const N = 100_000_000; const K = 100
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:24))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+@time radixsort!(UInt192,svec) #88
+issorted(svec)
+
+
+const N = 100_000_000; const K = 100
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:24))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+@time sort!(svec) #78 seconds
+issorted(svec)
+
+
+@time radixsort!(svec)
+issorted(svec)
+
+
 T = UInt192
 i = 1
 @time vs = FastGroupBy.load_bits.(T, svec, Int(i-1)*sizeof(T));
