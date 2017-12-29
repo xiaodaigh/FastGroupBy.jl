@@ -32,21 +32,24 @@ function load_bits(::Type{T}, s::String, skipbytes = 0) where T
     end
 end
 
-function load_bits_ntoh(::Type{T}, s::String, skipbytes = 0) where T<:Unsigned
-    n = sizeof(s)
-    if n < skipbytes
-        return zero(T)
-    elseif n - skipbytes >= 8
-        return unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
-    else
-        ns = (sizeof(T) - min(8, n - skipbytes))*8
-        h = unsafe_load(Ptr{T}(pointer(s, skipbytes+1)))
-        # h = unsafe_load(Ptr{T}(pointer(s)+skipbytes))
-        h = h << ns
-        h = h >> ns
-        return h
-    end
+function load_bits_fast(::Type{T}, s::String,) where T
+    n = sizeof(s)   
+    ns = (sizeof(T) - n)*8
+    h = unsafe_load(Ptr{T}(pointer(s)))
+    h = h << ns
+    h = h >> ns
+    return h
 end
+
+function load_bits_fast_ntoh(::Type{T}, s::String,) where T
+    n = sizeof(s)   
+    ns = (sizeof(T) - n)*8
+    h = unsafe_load(Ptr{T}(pointer(s)))
+    h = h << ns
+    h = h >> ns
+    return ntoh(h)
+end
+
 
 function roughhash(s::String)
     n = sizeof(s)
@@ -68,11 +71,6 @@ Radixsort on strings
 
     svec - a vector of strings; sorts it by bits
 """
-<<<<<<<
-radixsort!(svec::Vector{String}) = radixsort!(UInt, svec::Vector{String})
-
-function radixsort!(T, svec::Vector{String})
-=======
 function radixsort_ntoh!(svec::Vector{String}, skipbytes = 0, pointer_type = UInt)
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
     iters = ceil(lens*8/SortingAlgorithms.RADIX_SIZE)
@@ -85,12 +83,12 @@ function radixsort_ntoh!(svec::Vector{String}, skipbytes = 0, pointer_type = UIn
 end
 
 
-function radixsort!(svec::Vector{String})
->>>>>>>
+radixsort!(svec::Vector{String}) = radixsort!(UInt, svec::Vector{String})
+function radixsort!(::Type{T}, svec::Vector{String}) where T
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
     iters = ceil(lens/sizeof(T))
-    for i = iters:-1:1
-        sorttwo_lsd16!(load_bits.(T, svec, Int(i-1)*sizeof(T)), svec)
+    for i = iters:-1:1        
+        sorttwo_lsd16!(load_bits_fast.(T, svec), svec)
     end
 end
 

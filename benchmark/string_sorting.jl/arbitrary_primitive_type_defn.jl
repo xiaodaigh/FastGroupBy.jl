@@ -2,7 +2,7 @@ using FastGroupBy,InternedStrings
 import FastGroupBy.mask16bit
 const N = 100_000_000; const K = 100
 srand(1);
-@time sample_space = [string(rand(Char.(97:97+25), rand(1:24))...) for k in 1:N÷K];
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:16))...) for k in 1:N÷K];
 @time svec = rand(sample_space, N);
 @time radixsort!(UInt192,svec)
 issorted(svec)
@@ -10,47 +10,74 @@ issorted(svec)
 T = UInt192
 i = 1
 @time vs = FastGroupBy.load_bits.(T, svec, Int(i-1)*sizeof(T));
+@time FastGroupBy.sorttwo_lsd16!(vs1, svec);
+
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:24))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+@time vs1 = FastGroupBy.load_bits_fast.(T, svec);
+@time FastGroupBy.sorttwo_lsd!(vs1, svec)
+
+using BenchmarkTools
+T = UInt128
+i = 1
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:16))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+function fn1(svec, T) 
+    @time vs1 = FastGroupBy.load_bits_fast.(T, svec); # 11
+    @time FastGroupBy.sorttwo_lsd16!(vs1, svec); # 21
+end;
+@time fn1(svec, T); #34 #37
+issorted(svec)
+
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:16))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+function fn2(svec, T)    
+    @time vs1 = FastGroupBy.load_bits_fast.(T, svec); # 11
+    @time FastGroupBy.sorttwo_lsd!(vs1, svec); # 21
+end
+@time fn2(svec, T);
+issorted(svec, T) #31 #44
+
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:16))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+function fn3(svec, T)
+    @time vs1 = FastGroupBy.load_bits_fast.(T, svec); # 11
+    @time FastGroupBy.sorttwo!(ntoh.(vs1), svec); #29
+end
+@time fn3(svec, T); #40 #30
+issorted(svec)
+
+srand(1);
+@time sample_space = [string(rand(Char.(97:97+25), rand(1:16))...) for k in 1:N÷K];
+@time svec = rand(sample_space, N);
+function fn4(svec, T)    
+    @time vs1 = FastGroupBy.load_bits_fast_ntoh.(T, svec); #2
+    @time FastGroupBy.sorttwo!(vs1, svec) #18
+end
+@time fn4(svec, T); #47 #40
+issorted(svec)
+
+
+
+@time sorttwo!(vs, svec)
+@time issorted(svec)
+
+@time radixsort!(UInt192,svec)
+issorted(svec)
+
+
+T = UInt
+i = 1
+@time vs = FastGroupBy.load_bits.(T, svec, Int(i-1)*sizeof(T));
+@time vs1 = load_bits.(T, svec, Int(i-1)*sizeof(T));
+
+
+
+
+@time radixsort!(UInt128,svec)
+issorted(svec)
 index = svec;
-
-
-
-unsafe_load(Ptr{UInt256}(svec[1].value))
-
-primitive type  UInt256 256 end
-
-using FastGroupBy
-x = unsafe_load(Ptr{UInt24}(pointer("abc")))
-y = unsafe_load(Ptr{UInt24}(pointer("def")))
-
-Base.unsafe_convert(UInt24, 0xffffff)
-
-z = UInt(16^5*15 + 16^4*15 + 16^3*15 + 16^2*15 + 16*15+ 15)
-unsafe_load(Ptr{UInt24}(pointer_from_objref(z)))
-
-Base.and_int(x,y)
-x & y
-
-promote_rule(::Type{UInt24}, ::Union{Type{Int16}, Type{Int8}, Type{UInt16}, Type{UInt8}}) = UInt32
-
-UInt(x)
-
-unsafe_load(Ptr{UInt16}(pointer(string("a", Char(8*16+15)))))
-
-unsafe_load(pointer(string(Char(255))))
-
-@which convert(UInt, UInt16(15))
-
-
-promote(x, 65) & 0xff
-
-# bitshifts work fine
-x 
-x >> 8
-x << 8
-
-Base.and_int(65, 0xff)
-
-@which x & 0xff
-
-typeof(65) <: Base.BitInteger
-typeof(0xff) <: Base.BitInteger
