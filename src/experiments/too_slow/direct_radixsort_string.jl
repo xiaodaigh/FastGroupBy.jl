@@ -12,9 +12,9 @@ function direct_radixsort_string!(strvec::AbstractVector{S}, sizeofstr = sizeof.
 
     # Histogram for each element, radix
     @time for i = 1:l
-        sz = sizeofstr[i]
+         @inbounds sz = sizeofstr[i]
         for j = 1:sz
-            idx = Int(codeunit(strvec[i], j))+1
+            @inbounds idx = Int(codeunit(strvec[i], j))+1
             @inbounds bin[idx,j] += 1
         end
         for j = sz+1:iters

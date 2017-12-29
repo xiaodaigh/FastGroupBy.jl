@@ -12,6 +12,7 @@ end
 const CHAR0 = UInt8(0)
 code_unit0(str, pos) = sizeof(str) >= pos ? codeunit(str, pos) : CHAR0
 
+
 # inspiration http://www.cs.princeton.edu/courses/archive/spring03/cs226/lectures/radix
 function three_way_radix_qsort0!(svec, lo = 1, hi = length(svec), cmppos = 1)
     if hi <= lo
