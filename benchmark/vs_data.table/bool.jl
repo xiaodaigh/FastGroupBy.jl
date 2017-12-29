@@ -32,7 +32,9 @@ y1 = @elapsed fastby!(sum, id_bool, val);
 y
 y1
 
-y1/parse(Float64, y[1:end-3])
+r_speed = parse(Float64, y[1:end-3])
+
+fgb_speed = y1/parse(Float64, y[1:end-3])
 
 srand(1);
 using StatsBase;
@@ -40,4 +42,10 @@ id_bool = rand(Bool, N);
 val = rand(round.(rand(K)*100,4), N);
 y2 = @elapsed countmap(id_bool, weights(val));
 
-y2/parse(Float64, y[1:end-3])
+cm_speed = y2/parse(Float64, y[1:end-3])
+
+
+using Plots
+bar([1, fgb_speed, cm_speed], title = "Bool fastby! Speed",
+xaxis = (""))
+hline!(1)

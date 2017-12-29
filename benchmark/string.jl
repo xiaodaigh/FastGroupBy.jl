@@ -1,7 +1,10 @@
+
+
 # only need to be run once to install packages
 #Pkg.clone("https://github.com/JuliaData/SplitApplyCombine.jl.git")
 #Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 
+using Revise, DataBench
 using FastGroupBy
 
 const M=100_000_000; const K=100

@@ -9,9 +9,6 @@ valvec = rand(N);
 @btime radixsort!($byvec)
 @btime radixsort8!($byvec)
 
-
-
-
 @time x = ntoh.(unsafe_load.(Ptr{UInt}.(pointer.(byvec))))
 
 def(byvec) =  ntoh.(unsafe_load.(Ptr{UInt}.(pointer.(byvec))))

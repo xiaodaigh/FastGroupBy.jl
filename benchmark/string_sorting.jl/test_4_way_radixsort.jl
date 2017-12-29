@@ -4,6 +4,12 @@ srand(1);
 @time sample_space = [string(rand(Char.(97:97+25), rand(1:8))...) for k in 1:N÷K]
 @time svec = rand(sample_space, N);
 
+
+using BenchmarkTools
+@time codeunit.(svec,1)
+
+
+
 include("src/three_way_radix_quick_sort.jl")
 
 x = svec[1:10]
