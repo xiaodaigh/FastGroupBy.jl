@@ -2,6 +2,7 @@ using FastGroupBy, StatsBase, DataFrames
 import DataFrames.DataFrame
 using Base.Test
 
+# Basic sumby and fastby
 tic()
 a = [1, 1, 2, 3, 3];
 aa = sumby!(a,copy(a));
@@ -11,15 +12,27 @@ b = Dict(1 => 2, 2 => 2, 3 => 6)
 @test aaa == b
 toc()
 
+# String sort
 tic()
 const M=1000; const K=100; 
-# srand(1)
-# @time svec1 = rand(["i"*dec(k,rand(1:7)) for k in 1:M÷K], M)
-svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M)
-radixsort!(svec1)
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+@time radixsort_lsd!(svec1);
+@test issorted(svec1)
+
+svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M);
+@time radixsort_lsd!(svec1);
+@test issorted(svec1)
+
+svec1 = rand([string(rand(Char.(32:126), rand(1:24))...) for k in 1:M÷K], M);
+@time radixsort_lsd!(svec1);
+@test issorted(svec1)
+
+svec1 = rand([string(rand(Char.(32:126), rand(1:32))...) for k in 1:M÷K], M);
+@time radixsort_lsd!(svec1);
 @test issorted(svec1)
 toc()
 
+# fastby sum
 tic()
 byvec  = [88, 888, 8, 88, 888, 88]
 valvec = [1 , 2  , 3, 4 , 5  , 6]
@@ -27,12 +40,14 @@ grpsum = fastby!(sum, byvec, valvec)
 expected_result = Dict(88 => 11, 8 => 3, 888 => 7)
 @test grpsum == expected_result
 
+# fastby string
 byvec  = ["grpA", "grpC", "grpB", "grpA", "grpC", "grpA"]
 valvec = [1     , 2     , 3     , 4     , 5     , 6     ]
 grpsum = fastby!(sum, byvec, valvec)
 expected_result = Dict("grpA" => 11, "grpB" => 3, "grpC" => 7)
 @test grpsum == expected_result
 
+# fastby Bool
 byvec = rand(Bool, 1_000_000)
 valvec = rand(1_000_000)
 x = fastby!(sum, byvec, valvec)
@@ -40,6 +55,7 @@ y = countmap(byvec, weights(valvec))
 @test length(x)  == length(y) && [x[k] ≈ y[k] for k = keys(x)] |> all
 toc()
 
+# sumby vs DataFrames.aggregate
 tic()
 srand(1);
 id = rand(1:Int(round(M/K)), M);
