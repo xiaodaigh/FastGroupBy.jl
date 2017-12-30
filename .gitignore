@@ -21,3 +21,5 @@ build/assets/
 *.so
 
 strqsort\.dll
+
+*.dll
