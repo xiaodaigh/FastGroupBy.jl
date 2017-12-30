@@ -29,7 +29,7 @@ export fastby!, column, sumby, sumby!
 export sumby_contiguous, sumby_dict, sumby_radixgroup!
 export sumby_radixsort!, sumby_sortperm, sumby
 export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
-export radixsort_lsd!, Bits24, Bits192, str_qsort!
+export radixsort_lsd!, Bits24, Bits192, str_qsort!, three_way_radix_qsort!
 
 ##############################################################################
 ##
@@ -56,5 +56,6 @@ include("string_sort/string_radixsort.jl")
 include("fastby.jl")
 include("bits_types.jl")
 include("string_sort/ccmp_sort.jl")
+include("string_sort/three_way_radix_quicksort.jl")
 
 end # module FastGroupBy
