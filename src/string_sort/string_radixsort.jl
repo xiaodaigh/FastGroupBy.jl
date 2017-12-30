@@ -23,12 +23,72 @@ Radixsort on strings
 
     svec - a vector of strings; sorts it by bits
 """
-function radixsort_lsd!(svec::Vector{String})
+radixsort_lsd!(x) = radixsort_lsd24!(x)
+
+function radixsort_lsd16!(svec::Vector{String})
     # find the maximum string length
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
     skipbytes = lens
     while lens > 0
-        if lens > 8
+       if lens > 8
+            skipbytes = max(0, skipbytes - 16)
+            sorttwo!(load_bits.(UInt128, svec, skipbytes), svec)
+            lens -= 16
+        elseif lens > 4
+            skipbytes = max(0, skipbytes - 8)
+            sorttwo!(load_bits.(UInt64, svec, skipbytes), svec)
+            lens -= 8
+        else
+            skipbytes = max(0, skipbytes - 4)
+            sorttwo!(load_bits.(UInt32, svec, skipbytes), svec)
+            lens -= 4
+        end
+    end
+    svec
+end
+
+function radixsort_lsd24!(svec::Vector{String})
+    # find the maximum string length
+    lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
+    skipbytes = lens
+    while lens > 0
+        if lens > 16 && ceil(lens/24) < ceil(lens/16)
+            skipbytes = max(0, skipbytes - 24)
+            sorttwo!(load_bits.(Bits192, svec, skipbytes), svec)
+            lens -= 24
+        elseif lens > 8
+        # if lens > 8
+            skipbytes = max(0, skipbytes - 16)
+            sorttwo!(load_bits.(UInt128, svec, skipbytes), svec)
+            lens -= 16
+        elseif lens > 4
+            skipbytes = max(0, skipbytes - 8)
+            sorttwo!(load_bits.(UInt64, svec, skipbytes), svec)
+            lens -= 8
+        else
+            skipbytes = max(0, skipbytes - 4)
+            sorttwo!(load_bits.(UInt32, svec, skipbytes), svec)
+            lens -= 4
+        end
+    end
+    svec
+end
+
+function radixsort_lsd32!(svec::Vector{String})
+    # find the maximum string length
+    lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
+    skipbytes = lens
+    while lens > 0
+        if lens > 24
+            skipbytes = max(0, skipbytes - 32)
+            sorttwo!(load_bits.(Bits256, svec, skipbytes), svec)
+            lens -= 32
+        elseif lens > 16 && ceil(lens/24) < ceil(lens/16)
+            skipbytes = max(0, skipbytes - 24)
+            sorttwo!(load_bits.(Bits192, svec, skipbytes), svec)
+            lens -= 24
+        elseif lens > 8
+        # if lens > 8
             skipbytes = max(0, skipbytes - 16)
             sorttwo!(load_bits.(UInt128, svec, skipbytes), svec)
             lens -= 16
@@ -47,43 +107,3 @@ end
 
 radixsort!(svec::Vector{String}) = radixsort!(UInt, svec::Vector{String})
 radixsort!(::Type{T}, svec::Vector{String}) where T = radixsort_lsd!(svec)
-
-
-# radixsort!(svec::Vector{String}) = radixsort!(UInt, svec::Vector{String})
-# function radixsort!(::Type{T}, svec::Vector{String}) where T
-#     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
-#     iters = ceil(lens/sizeof(T))
-#     for i = iters:-1:1
-#         sorttwo!()
-#         # sorttwo_lsd16!(load_bits_fast.(T, svec), svec)
-#     end
-# end
-
-# function radixsort8!(svec::Vector{String})
-#     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
-#     iters = ceil(lens/sizeof(UInt))
-#     for i = iters:-1:1
-#         sorttwo_lsd!(load_bits.(svec, Int(i-1)*sizeof(UInt)), svec)
-#     end
-# end
-
-# """
-# use radix to sort the bits but reorder an index instead of the original string
-# until the very end
-# """
-# function radixsort_index(svec::Vector{String})
-#     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
-#     iters = ceil(lens/sizeof(UInt))
-#     indexes = fcollect(length(svec))
-#     for i = iters:-1:1
-#         # compute the bit representation for the next 8 bytes
-#         bitsrep = load_bits.(svec, Int(i-1)*sizeof(UInt))
-#         if i == iters
-#             sorttwo_lsd16!(bitsrep, indexes)
-#         else
-#             sorttwo_lsd16!(@view(bitsrep[indexes]), indexes)
-#         end
-#     end
-#     svec[indexes]
-# end
-
