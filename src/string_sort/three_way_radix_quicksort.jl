@@ -25,9 +25,9 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
             svec[lo], svec[hi] = svec[hi], svec[lo]
         end
         return svec
-    # elseif hi - lo < 256
-    #     svec = sort!(svec, lo, hi, InsertionSort, Base.Forward)
-    #     return svec
+    elseif hi - lo < 16
+        svec = sort!(svec, lo, hi, InsertionSort, Base.Forward)
+        return svec
     end
 
     #  pick a pivot 
@@ -44,6 +44,7 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
     
 
     if length(lb) == 0
+        # lb[lo:hi] = FastGroupBy.load_bits.(UInt, @view(svec[lo:hi]), skipbytes)
         lb = FastGroupBy.load_bits.(UInt, svec, skipbytes)
     end
 
@@ -85,8 +86,9 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
     if p >= q
         # println("p >= q")
         if FastGroupBy.maxlength(svec, lo, hi) > skipbytes + 8
+            lb[lo:hi] = FastGroupBy.load_bits.(UInt, @view(svec[lo:hi]), skipbytes+8)
             three_way_radix_qsort!(svec, lo, hi, skipbytes + 8, lb)
-            return
+            return svec
         end
     end
 
@@ -120,7 +122,8 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
     end
     if FastGroupBy.maxlength(svec, j+1, i-1) > skipbytes + 8 
         # println("mid: ", j+1,i-1,cmppos+1)
-        three_way_radix_qsort!(svec, j+1, i-1, skipbytes + 8, lb)
+        lb[j+1:i-1] = FastGroupBy.load_bits.(UInt, @view(svec[j+1:i-1]), skipbytes+8)
+        three_way_radix_qsort!(svec, j+1, i-1, skipbytes + 8, lb) # need to compute lb again
     end
     
     # println("gt: ", i,hi,cmppos+1)
