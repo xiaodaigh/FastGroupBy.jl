@@ -1,6 +1,13 @@
 """
 Fast Group By algorithm
 """
+fastby(fn, byvec, valvec) = fastby!(fn, copy(byvec), copy(valvec))
+
+fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
+
+# fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol, outType = Type{DataFrame}) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
+
+
 function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T, S}
     length(byvec) == length(valvec) || throw(DimensionMismatch())
     if issorted(byvec)

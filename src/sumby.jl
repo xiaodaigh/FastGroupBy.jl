@@ -33,6 +33,7 @@ srand(1);
 
 ```
 """
+sumby(by, val, alg = :auto) = sumby!(copy(by), copy(val), alg)
 function sumby!(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S} where {T, S<:Number}
     l = length(by)
 
@@ -308,7 +309,7 @@ function sumby_dict(by::AbstractVector{T}, val::AbstractVector{S})::Dict{T,S} wh
 end
 
 #Optimized sumby for PooledArrays
-function sumby(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S}) where {S<:Number}
+function sumby!(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S}) where {S<:Number}
   l = length(by.pool)
   res = zeros(S, l)
   #refs = Int64.(by.refs)
