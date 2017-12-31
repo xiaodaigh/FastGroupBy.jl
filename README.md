@@ -6,8 +6,10 @@ Faster algorithms for doing vector group-by. You can install it using
 # install
 Pkg.add("FastGroupBy")
 # install latest version
+# `fastby` is not yet published so need to clone
 Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 ```
+**Note: `fastby` is not yet published and hence need to manual install with `Pkg.clone`**
 
 # `fastby` and `fastby!`
 The `fastby` and `fastby!` functions allow the user to perform arbitrary computation on a vector (`valvec`) grouped by another vector (`byvec`). Their output format is a `Dict` whose `Dict`-keys are the distinct groups and the `Dict`-values are the results of applying the function, `fn` on the `valvec`, see below for explanation of `fn`, `byvec`, and `valvec`.
@@ -129,6 +131,17 @@ id3 = sample(sprintf("i%07d",1:(N/K)), N, TRUE)
 pt = proc.time()
 system.time(sort(id3, method="radix"))
 data.table::timetaken(pt) # 18.9 seconds
+```
+
+## `fastby` on `DataFrames`
+One can also apply `fastby` on `DataFrame` by supplying the DataFrame as the second argument and its columns using `Symbol` in the third and fourth argument, being `bycol` and `valcol` respectively. For example
+
+```
+df1 = DataFrame(grps = rand(1:100, 1_000_000), val = rand(1_000_000))
+# compute the difference between the number rows in that group and the mean of `val` in that group
+res = fastby(val_grouped -> length(val_grouped) - mean(val_grouped), df1, :grps, :val)
+# convert to dataframe
+resdf = DataFrame(grps = keys(res) |> collect, len_minus_mean_val = values(res) |> collect)
 ```
 
 # sumby!
