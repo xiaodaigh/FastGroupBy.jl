@@ -9,13 +9,15 @@ Pkg.add("FastGroupBy")
 Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
 ```
 
-# `fastby!`
-The `fastby!` function allows the user to perform arbitrary computation on a vector (`valvec`) grouped by another vector (`byvec`). Its output is a `Dict` whose `Dict`-keys are the distinct groups and the `Dict`-values are the results of applying the function on the `valvec`.
+# `fastby` and `fastby!`
+The `fastby` and `fastby!` functions allow the user to perform arbitrary computation on a vector (`valvec`) grouped by another vector (`byvec`). Their output format is a `Dict` whose `Dict`-keys are the distinct groups and the `Dict`-values are the results of applying the function, `fn` on the `valvec`, see below for explanation of `fn`, `byvec`, and `valvec`.
 
-The function has three main arguments
+The difference between `fastby` and `fastby!` is that `fastby!` may change the input vectors `byvec` and `valvec` whereas `fastby` won't.
+
+Both functions have the same three main arguments, but we shall illustrate using `fastby` only
 
 ```julia
-fastby!(fn, byvec, valvec)
+fastby(fn, byvec, valvec)
 ```
 
 * `fn` is a function `fn` to be applied to each by-group of `valvec`
@@ -23,14 +25,14 @@ fastby!(fn, byvec, valvec)
                                      UInt8, UInt16, UInt32, UInt64, UInt128, String`
 * `valvec` is the vector that `fn` is applied to
 
-For example `fastby!(sum, byvec, valvec)` is equivalent to `StatsBase`'s `countmap(byvec, weights(valvec))`. Consider the below
+For example `fastby(sum, byvec, valvec)` is equivalent to `StatsBase`'s `countmap(byvec, weights(valvec))`. Consider the below
 ```julia
 byvec  = [88, 888, 8, 88, 888, 88]
 valvec = [1 , 2  , 3, 4 , 5  , 6]
 ```
 to compute the sum value of `valvec` in each group of `byvec` we do
 ```julia
-grpsum = fastby!(sum, byvec, valvec)
+grpsum = fastby(sum, byvec, valvec)
 expected_result = Dict(88 => 11, 8 => 3, 888 => 7)
 grpsum == expected_result # true
 ```
@@ -38,34 +40,34 @@ grpsum == expected_result # true
 ## `fastby!` with an arbitrary `fn`
 You can also compute arbitrary functions for each by-group e.g. `mean`
 ```julia
-@time a = fastby!(mean, x, y)
+@time a = fastby(mean, x, y)
 ```
 
 This generalizes to arbitrary user-defined functions e.g. the below computes the `sizeof` each element within each by group
 ```julia
 byvec  = [88   , 888  , 8  , 88  , 888 , 88]
 valvec = ["abc", "def", "g", "hi", "jk", "lmop"]
-@time a = fastby!(yy -> sizeof.(yy), x, y);
+@time a = fastby(yy -> sizeof.(yy), x, y);
 ```
 
 Julia's do-notation can be used
 ```julia
-@time a = fastby!(x, y) do grouped_y
+@time a = fastby(x, y) do grouped_y
     # you can perform complex caculations here knowing that grouped_y is y grouped by x
     grouped_y[end] - grouped_y[1]
 end;
 ```
 
-The `fastby!` is fast if group by a vector of `Bool`'s as well
+The `fastby` is fast if group by a vector of `Bool`'s as well
 ```julia
 srand(1);
 x = rand(Bool, 100_000_000);
 y = rand(100_000_000);
 
-@time fastby!(sum, x, y)
+@time fastby(sum, x, y)
 ```
 
-The `fastby!` works on `String` type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
+The `fastby` works on `String` type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
 ```julia
 const M=10_000_000; const K=100;
 srand(1);
