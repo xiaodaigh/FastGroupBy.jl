@@ -1,12 +1,10 @@
-
-
 using Revise
 using DataBench, FastGroupBy
 
 function cmp_3way_lsd(n, strlen)
     srand(1);
     svec = DataBench.gen_string_vec_var_len(n, strlen);
-    a = @elapsed three_way_radix_qsort0!(svec);
+    a = @elapsed three_way_radix_qsort!(svec);
     @assert issorted(svec)
 
     srand(1);

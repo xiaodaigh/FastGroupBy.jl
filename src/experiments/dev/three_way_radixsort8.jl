@@ -1,20 +1,3 @@
-function maxlength(svec, lo = 1, hi = length(svec))
-    if lo > hi 
-        return -1
-    end
-    ml = length(svec[lo])
-    for i = lo+1:hi
-        ml = max(ml, length(svec[i]))
-    end
-    ml
-end
-
-const CHAR0 = UInt8(0)
-function code_unit0(str, pos)
-    @inbounds return sizeof(str) < pos ? CHAR0 : codeunit(str, pos)
-end
-
-# inspiration http://www.cs.princeton.edu/courses/archive/spring03/cs226/lectures/radix
 # radix 8 bytes at a time because 8 bytes fit into a word
 function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, lb = UInt[])
     if hi <= lo
@@ -85,7 +68,7 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
     if p >= q
         # println("p >= q")
         if FastGroupBy.maxlength(svec, lo, hi) > skipbytes + 8
-            three_way_radix_qsort!(svec, lo, hi, skipbytes + 8, lb)
+            three_way_radix_qsort8!(svec, lo, hi, skipbytes + 8, lb)
             return
         end
     end
@@ -112,7 +95,7 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
     # recursive sort
 
     # println("lessthan: ", lo,j,cmppos)
-    three_way_radix_qsort!(svec, lo, j, skipbytes, lb)
+    three_way_radix_qsort8!(svec, lo, j, skipbytes, lb)
     
 
     if i == hi && lb[i] == pivotl
@@ -120,11 +103,48 @@ function three_way_radix_qsort!(svec, lo = 1, hi = length(svec), skipbytes = 0, 
     end
     if FastGroupBy.maxlength(svec, j+1, i-1) > skipbytes + 8 
         # println("mid: ", j+1,i-1,cmppos+1)
-        three_way_radix_qsort!(svec, j+1, i-1, skipbytes + 8, lb)
+        three_way_radix_qsort8!(svec, j+1, i-1, skipbytes + 8, lb)
     end
     
     # println("gt: ", i,hi,cmppos+1)
-    three_way_radix_qsort!(svec, i, hi, skipbytes, lb)
+    three_way_radix_qsort8!(svec, i, hi, skipbytes, lb)
     
     return svec
 end
+
+using FastGroupBy, DataBench
+svec = DataBench.gen_string_vec_var_len(1_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time three_way_radix_qsort8!(svec);
+issorted(svec)
+
+svec = DataBench.gen_string_vec_var_len(1_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time three_way_radix_qsort!(svec);
+issorted(svec)
+
+svec = DataBench.gen_string_vec_var_len(1_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time radixsort_lsd!(svec);
+issorted(svec)
+
+using FastGroupBy, DataBench
+svec = DataBench.gen_string_vec_var_len(10_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time three_way_radix_qsort8!(svec);
+issorted(svec)
+
+svec = DataBench.gen_string_vec_var_len(10_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time three_way_radix_qsort!(svec);
+issorted(svec)
+
+svec = DataBench.gen_string_vec_var_len(10_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time radixsort_lsd!(svec);
+issorted(svec)
+
+svec = DataBench.gen_string_vec_var_len(10_000_000,8);
+lo = 1; hi = length(svec); skipbytes = 0;
+@time str_qsort!(svec);
+issorted(svec)
