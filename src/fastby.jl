@@ -2,7 +2,9 @@
 Fast Group By algorithm
 """
 
-fastby(fn, byvec, valvec) = fastby!(fn, copy(byvec), copy(valvec))
+# fastby(fn, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
+
+# fastby(fn, byvec, valvec, outType) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) || fastby!(fn, copy(byvec), copy(valvec), outType)
 
 fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
 
@@ -16,9 +18,9 @@ end
 
 function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T, S}
     length(byvec) == length(valvec) || throw(DimensionMismatch())
-    if length(byvec) == 0
-        return Dict{T, outType}()
-    end
+    # if length(byvec) == 0
+    #     return Dict{T, outType}()
+    # end
     if issorted(byvec)
         h = _contiguousby(fn, byvec, valvec, outType)::Dict{T,outType}
     else
