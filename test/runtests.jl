@@ -1,20 +1,29 @@
-using FastGroupBy, StatsBase, DataFrames
+using Revise
+using FastGroupBy, StatsBase, DataFrames, SortingAlgorithms
 import DataFrames.DataFrame
+import Base: Reverse
 using Base.Test
-
-# Basic sumby and fastby
-tic()
-a = [1, 1, 2, 3, 3];
-aa = sumby!(a,copy(a));
-aaa = fastby!(sum,a,copy(a))
-b = Dict(1 => 2, 2 => 2, 3 => 6)
-@test aa == b
-@test aaa == b
-toc()
 
 # String sort
 tic()
 const M=1000; const K=100; 
+svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
+@time res1 = sort(svec1, alg = RadixSort)
+@test issorted(res1)
+
+@time res1 = sort(svec1, alg = RadixSort, rev = true)
+@test issorted(res1, rev = true)
+
+@time res1 = sort(svec1, alg = RadixSort, order = Reverse)
+@test issorted(res1, rev = true)
+
+
+x = sortperm(svec1, alg = RadixSort)
+@which sortperm(svec1, alg = RadixSort)
+
+@time sort!(svec1);
+@test issorted(svec1)
+
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 @time radixsort_lsd!(svec1);
 @test issorted(svec1)
@@ -31,6 +40,17 @@ svec1 = rand([string(rand(Char.(32:126), rand(1:32))...) for k in 1:M÷K], M);
 @time radixsort_lsd!(svec1);
 @test issorted(svec1)
 toc()
+
+# Basic sumby and fastby
+tic()
+a = [1, 1, 2, 3, 3];
+aa = sumby!(a,copy(a));
+aaa = fastby!(sum,a,copy(a))
+b = Dict(1 => 2, 2 => 2, 3 => 6)
+@test aa == b
+@test aaa == b
+toc()
+
 
 # fastby sum
 tic()

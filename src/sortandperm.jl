@@ -1,4 +1,4 @@
-import Base: isbits, sizeof, ordtype, Ordering
+import Base: isbits, sizeof, ordtype, Ordering, Forward
 using SortingAlgorithms
 import SortingAlgorithms: RadixSortAlg
 import SortingAlgorithms: uint_mapping
@@ -7,18 +7,16 @@ import SortingAlgorithms: RADIX_SIZE, RADIX_MASK
 # const RADIX_SIZE = 20
 # const RADIX_MASK = UInt(2^20-1)
 
-function sorttwo!(vs::AbstractVector, index::AbstractVector, lo::Int = 1, hi::Int=length(vs), ::RadixSortAlg=RadixSort, o::Ordering = Base.Forward, ts=similar(vs))
+function sorttwo!(vs::AbstractVector{T}, index, lo::Int = 1, hi::Int=length(vs)) where T
     # Input checking
     if lo >= hi;  return (vs, index);  end
 
     # Make sure we're sorting a bits type
-    T = Base.Order.ordtype(o, vs)
+    # T = Base.Order.ordtype(o, vs)
     if !isbits(T)
         error("Radix sort only sorts bits types (got $T)")
     end
-
-    # index = collect(1:hi-lo+1)
-    index1 = similar(index)
+    o = Forward
 
     # Init
     iters = ceil(Integer, sizeof(T)*8/RADIX_SIZE)
@@ -37,6 +35,9 @@ function sorttwo!(vs::AbstractVector, index::AbstractVector, lo::Int = 1, hi::In
     # Sort!
     swaps = 0
     len = hi-lo+1
+
+    index1 = similar(index)
+    ts=similar(vs)
     for j = 1:iters
         # Unroll first data iteration, check for degenerate case
         v = uint_mapping(o, vs[hi])
