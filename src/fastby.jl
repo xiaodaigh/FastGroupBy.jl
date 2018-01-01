@@ -2,15 +2,18 @@
 Fast Group By algorithm
 """
 
+fastby(fn::Function, byvec, valvec, outType = typeof(fn(valvec[1:1]))) =  fastby!(fn, copy(byvec), copy(valvec), outType)
+
 # fastby(fn, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
 
 # fastby(fn, byvec, valvec, outType) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) || fastby!(fn, copy(byvec), copy(valvec), outType)
 
-fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
+fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
 
 # fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol, outType = Type{DataFrame}) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
 
-function fastby(fn, x::Vector{Bool}, y)
+function fastby(fn::Function, x::Vector{Bool}, y)
+    # TODO: fast path for sum and mean
     Dict{Bool, typeof(fn(y[1:1]))}(
         true => fn(@view(y[x])), 
         false => fn(@view(y[.!x])))
