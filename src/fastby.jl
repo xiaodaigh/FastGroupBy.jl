@@ -9,13 +9,16 @@ fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, c
 # fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol, outType = Type{DataFrame}) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
 
 function fastby(fn, x::Vector{Bool}, y)
-    Dict{Bool, typeof(fn(y[1]))}(
+    Dict{Bool, typeof(fn(y[1:1]))}(
         true => fn(@view(y[x])), 
         false => fn(@view(y[.!x])))
 end
 
-function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T, S}
+function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T, S}
     length(byvec) == length(valvec) || throw(DimensionMismatch())
+    if length(byvec) == 0
+        return Dict{T, outType}()
+    end
     if issorted(byvec)
         h = _contiguousby(fn, byvec, valvec, outType)::Dict{T,outType}
     else
@@ -27,7 +30,7 @@ end
 """
 Internal: single-function fastby
 """
-function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
+function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
     l = length(byvec)
     grouptwo!(byvec, valvec)
     return _contiguousby(fn, byvec, valvec, outType)
@@ -37,7 +40,7 @@ end
 """
 Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
 """
-function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
+function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
     l = length(byvec)
     lastby = byvec[1]
     res = Dict{T,outType}()

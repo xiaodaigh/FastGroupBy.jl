@@ -20,7 +20,7 @@ void str_qsort(char **strings, size_t len) {  /* you need to pass len here */
 """
 
 env_path = ""
-str_qsort!(::Any) = warning("""
+str_qsort!(::Any) = warn("""
     Either you LD_LIBRARY_PATH environment variable is not defined or gcc is not installed on your computer.
     * Google "how to set environment variable" and set 'LD_LIBRARY_PATH' to a folder/path you have access to
     * On Windows install MinGW. For example from [this link](http://mingw-w64.org/doku.php/download) and 
@@ -41,7 +41,7 @@ try
         # define a Julia function that calls the C function:
         str_qsort!(X::Array{String}) = ccall(("str_qsort", Clib), Void, (Ptr{UInt64}, Cint), reinterpret(Ptr{UInt64}, pointer(X)), length(X))
     catch e
-        warning("""
+        warn("""
             Either you LD_LIBRARY_PATH environment variable is not defined or gcc is not installed on your computer.
             * Google "how to set environment variable" and set 'LD_LIBRARY_PATH' to a folder/path you have access to
             * On Windows install MinGW. For example from [this link](http://mingw-w64.org/doku.php/download) and 
@@ -56,7 +56,7 @@ catch e
         # define a Julia function that calls the C function:
         str_qsort!(X::Array{String}) = ccall(("str_qsort", Clib), Void, (Ptr{UInt64}, Cint), reinterpret(Ptr{UInt64}, pointer(X)), length(X))
     catch e
-        warning("""
+        warn("""
             gcc is not installed on your computer:
             * On Windows install MinGW. For example from [this link](http://mingw-w64.org/doku.php/download) and 
             * add the path of the 'bin' folder to the environment variable PATH
@@ -66,7 +66,7 @@ catch e
     There is no environment variable 'LD_LIBRARY_PATH' defined. We require it to be able to compile the C sort for string sort.
     You have no access to the `str_qsort!` function
     """)
-    str_qsort!(::Any) = warning("""
+    str_qsort!(::Any) = warn("""
     Either you LD_LIBRARY_PATH environment variable is not defined or gcc is not installed on your computer.
     * Google "how to set environment variable" and set 'LD_LIBRARY_PATH' to a folder/path you have access to
     * On Windows install MinGW. For example from [this link](http://mingw-w64.org/doku.php/download) and 
