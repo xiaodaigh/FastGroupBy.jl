@@ -118,7 +118,7 @@ end
 using DataFrames
 struct StringIndexVector
     svec::Vector{String}
-    index::Vector{Integer}
+    index::Vector{Int}
 end
 
 # function setindex!(siv::StringIndexVector, X::StringIndexVector, inds)
