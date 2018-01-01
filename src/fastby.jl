@@ -9,8 +9,9 @@ fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, c
 # fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol, outType = Type{DataFrame}) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
 
 function fastby(fn, x::Vector{Bool}, y)
-    Dict{Bool, eltype(fn(y[1]))}(true => fn(@view(y[x])), 
-    false => fn(@view(y[.!x])))
+    Dict{Bool, eltype(fn(y[1]))}(
+        true => fn(@view(y[x])), 
+        false => fn(@view(y[.!x])))
 end
 
 function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1]))) where {T, S}
