@@ -1,6 +1,10 @@
 import Base: Forward, ForwardOrdering, Reverse, ReverseOrdering, Lexicographic, LexicographicOrdering, sortperm, Ordering, 
-            setindex!, getindex, similar
+            setindex!, getindex, similar, Algorithm
 import SortingAlgorithms: RadixSort, RadixSortAlg
+
+struct StringRadixSortAlg <: Algorithm end
+const StringRadixSort = StringRadixSortAlg() # this is needed to make sortperm work
+
 """
     load_bits([type,] s, skipbytes)
 
@@ -32,14 +36,32 @@ function load_bits(::Type{T}, s::String, skipbytes = 0) where T
 end
 
 
-"""
-    sort! sort strings
-"""
-# https://discourse.julialang.org/t/redundant-sort-sortperm-options-why/5631 ordering seem redundant and is confusing
-function sort!(svec::AbstractVector{String}, lo::Int, hi::Int, ::RadixSortAlg, o::O) where O <: Union{ForwardOrdering, ReverseOrdering, LexicographicOrdering}
+# Radix sort for strings
+function sort!(svec::AbstractVector{String}, ::StringRadixSortAlg, o::Perm)
+    sort!(svec, 1, length(svec), StringRadixSort, o)
+end
+
+function sort!(svec::AbstractVector, lo::Int, hi::Int, ::StringRadixSortAlg, o::O) where O <: Union{ForwardOrdering, ReverseOrdering, LexicographicOrdering, Perm}
+    if isa(o, Perm)
+        if eltype(o.data) != String
+            throw(ArgumentError("Cannot use StringRadixSort on type $(eltype(o.data))"))
+        end
+        return sortperm_radixsort(o.data, order = o.order)
+    else
+        sort!(svec, lo, hi, StringRadixSort, o)
+    end
+end
+
+function sort!(svec::AbstractVector{String}, lo::Int, hi::Int, ::StringRadixSortAlg, o::O) where O <: Union{ForwardOrdering, ReverseOrdering, LexicographicOrdering, Perm}
     #  Input checking
-    println(o == Reverse)
-    # return
+    if isa(o, Perm)
+        if eltype(o.data) != String
+            throw(ArgumentError("Cannot use StringRadixSort on type $(eltype(o.data))"))
+        end
+        o = o.order
+        return
+    end
+    
     if lo >= hi;  return svec;  end
 
     # find the maximum string length
@@ -75,12 +97,89 @@ function sort!(svec::AbstractVector{String}, lo::Int, hi::Int, ::RadixSortAlg, o
     svec
 end
 
-function sortperm_radixsort(svec::AbstractVector{String}; rev::Union{Bool,Void}=nothing, o::Ordering=Forward)
-    #  Input checking
-    # println(o == Reverse)
-    # return
-    # if lo >= hi;  return svec;  end
-    siv = StringIndexVector(copy(svec), fcollect(length(svec)))
+"""
+    sorttwo!(vs, index)
+
+Sort both the `vs` and reorder `index` at the same. This allows for faster sortperm
+for radix sort.
+"""
+function sorttwo!(vs::AbstractVector{T}, index, lo::Int = 1, hi::Int=length(vs)) where T
+    # Input checking
+    if lo >= hi;  return (vs, index);  end
+
+    # Make sure we're sorting a bits type
+    # T = Base.Order.ordtype(o, vs)
+    if !isbits(T)
+        error("Radix sort only sorts bits types (got $T)")
+    end
+    o = Forward
+
+    # Init
+    iters = ceil(Integer, sizeof(T)*8/RADIX_SIZE)
+    bin = zeros(UInt32, 2^RADIX_SIZE, iters)
+    if lo > 1;  bin[1,:] = lo-1;  end
+
+    # Histogram for each element, radix
+    for i = lo:hi
+        v = uint_mapping(o, vs[i])
+        for j = 1:iters
+            idx = Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+            @inbounds bin[idx,j] += 1
+        end
+    end
+
+    # Sort!
+    swaps = 0
+    len = hi-lo+1
+
+    index1 = similar(index)
+    ts=similar(vs)
+    for j = 1:iters
+        # Unroll first data iteration, check for degenerate case
+        v = uint_mapping(o, vs[hi])
+        idx = Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+
+        # are all values the same at this radix?
+        if bin[idx,j] == len;  continue;  end
+
+        cbin = cumsum(bin[:,j])
+        ci = cbin[idx]
+        ts[ci] = vs[hi]
+        index1[ci] = index[hi]
+        cbin[idx] -= 1
+
+        # Finish the loop...
+        @inbounds for i in hi-1:-1:lo
+            v = uint_mapping(o, vs[i])
+            idx = Int((v >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+            ci = cbin[idx]
+            ts[ci] = vs[i]
+            index1[ci] = index[i]
+            cbin[idx] -= 1
+        end
+        vs,ts = ts,vs
+        index, index1 = index1, index
+        swaps += 1
+    end
+
+    if isodd(swaps)
+        vs,ts = ts,vs
+        index, index1 = index1, index
+        for i = lo:hi
+            @inbounds vs[i] = ts[i]
+            @inbounds index[i] = index1[i]
+        end
+    end
+    (vs, index)
+end
+
+"""
+    sortperm_radixsort()
+
+Currently radixsot 
+"""
+function sortperm_radixsort(svec::AbstractVector{String}; rev::Union{Bool,Void}=nothing, order::Ordering=Forward)
+    siv = StringIndexVector(copy(svec), collect(1:length(svec)))
 
     # find the maximum string length
     lens = reduce((x,y) -> max(x,sizeof(y)),0, svec)
@@ -88,7 +187,7 @@ function sortperm_radixsort(svec::AbstractVector{String}; rev::Union{Bool,Void}=
     while lens > 0
        if lens > 8
             skipbytes = max(0, skipbytes - 16)
-            if o == Reverse
+            if order == Reverse
                 sorttwo!(.~load_bits.(UInt128, siv.svec, skipbytes), siv)
             else
                 sorttwo!(load_bits.(UInt128, siv.svec, skipbytes), siv)
@@ -96,7 +195,7 @@ function sortperm_radixsort(svec::AbstractVector{String}; rev::Union{Bool,Void}=
             lens -= 16
         elseif lens > 4
             skipbytes = max(0, skipbytes - 8)
-            if o == Reverse
+            if order == Reverse
                 sorttwo!(.~load_bits.(UInt64, siv.svec, skipbytes), siv)
             else
                 sorttwo!(load_bits.(UInt64, siv.svec, skipbytes), siv)
@@ -104,7 +203,7 @@ function sortperm_radixsort(svec::AbstractVector{String}; rev::Union{Bool,Void}=
             lens -= 8
         else
             skipbytes = max(0, skipbytes - 4)
-            if o == Reverse
+            if order == Reverse
                 sorttwo!(.~load_bits.(UInt32, siv.svec, skipbytes), siv)
             else
                 sorttwo!(load_bits.(UInt32, siv.svec, skipbytes), siv)
@@ -115,21 +214,13 @@ function sortperm_radixsort(svec::AbstractVector{String}; rev::Union{Bool,Void}=
     siv.index
 end
 
-using DataFrames
-struct StringIndexVector
+"Simple data structure for carrying a string vector and it's index; this allows
+`sorttwo!` to sort the radix of the string vector and reorder the string and its
+index at the same time allowing for faster sort_perm"
+struct StringIndexVector{T} <: AbstractVector{T}
     svec::Vector{String}
-    index::Vector{Int}
+    index::Vector{T}
 end
-
-# function setindex!(siv::StringIndexVector, X::StringIndexVector, inds)
-#     if length(X.svec) == 1
-#         siv.svec[inds] = X.svec[1]
-#         siv.index[inds] = X.index[1]
-#     else
-#         siv.svec[inds] = X.svec
-#         siv.index[inds] = X.index
-#     end
-# end
 
 function setindex!(siv::StringIndexVector, X::StringIndexVector, inds)
     siv.svec[inds] = X.svec

@@ -13,11 +13,6 @@ import DataFrames: DataFrame, AbstractDataFrame
 import IndexedTables: NDSparse, column
 import PooledArrays.PooledArray
 import CategoricalArrays.CategoricalArray
-# import SplitApplyCombine.groupreduce
-
-
-# using DataBench
-# using ParallelAccelerator
 
 ##############################################################################
 ##
@@ -30,6 +25,7 @@ export sumby_contiguous, sumby_dict, sumby_radixgroup!, isgrouped
 export sumby_radixsort!, sumby_sortperm, sumby
 export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
 export radixsort_lsd!, Bits24, Bits192, str_qsort!, three_way_radix_qsort!
+export StringRadixSort
 
 ##############################################################################
 ##

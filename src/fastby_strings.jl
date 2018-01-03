@@ -29,9 +29,11 @@ function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, 
     elseif checkgrouped && isgrouped(x)
         res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
     else
-        y = hash.(x)        
-        grouptwo!(y, x);
-        if isgrouped(y,x)
+        y = hash.(x)
+        #xz is the x and the z
+        xz  = FastGroupBy.StringIndexVector(x, z)
+        grouptwo!(y, xz);
+        if isgrouped(y, xz)
             res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
         end
     end
