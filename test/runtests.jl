@@ -6,12 +6,26 @@ import Base: Reverse
 using Base.Test
 using CategoricalArrays, PooledArrays, StatsBase
 
+const M=10_000_000; const K=100; 
 
 # fastby for CategoricalArrays and PooledArrays
 tic()
-const M=10_000_000; const K=100; 
 pools = unique([randstring(rand(1:32)) for i = 1:M÷K]);
+byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), M), CategoricalPool(pools, false));
+valvec = rand(M);
+@time cmres = countmap(byvec, weights(valvec)); #76
+@time fnrs = fastby(sum, byvec, valvec); # 24
+@test length(cmres) == length(fnrs)
+@test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
 
+byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), M)), pools);
+@time cmres = countmap(byvec, weights(valvec)); #38
+@time fnrs = fastby(sum, byvec, valvec); # 21
+@test length(cmres) == length(fnrs)
+@test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
+
+
+pools = unique([randstring(rand(1:32)) for i = 1:M÷K]);
 byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), M), CategoricalPool(pools, false));
 valvec = rand(M);
 @time cmres = countmap(byvec, weights(valvec)); #76
@@ -23,14 +37,13 @@ byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), 
 valvec = rand(M);
 @time cmres = countmap(byvec, weights(valvec)); #38
 @time fnrs = fastby!(sum, byvec, valvec); # 21
-
 @test length(cmres) == length(fnrs)
 @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
 toc()
 
 # String sort
 tic()
-const M=1000; const K=100; 
+# const M=1000; const K=100; 
 svec1 = rand([Base.randstring(rand(1:32)) for k in 1:M÷K], M);
 @time res1 = sort(svec1, alg = StringRadixSort)
 @test issorted(res1)
