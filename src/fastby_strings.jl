@@ -22,7 +22,7 @@ function isgrouped(testgrp, truegrp)
     res
 end
 
-function fastby!(fn::Function, x::AbstractVector{String}, z; checksorted = true, checkgrouped = true)
+function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}; checksorted = true, checkgrouped = true) where S
     res = Dict{String, Float64}()
 
     if checksorted && issorted(x)
