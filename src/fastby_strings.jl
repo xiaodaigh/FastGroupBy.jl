@@ -22,18 +22,17 @@ function isgrouped(testgrp, truegrp)
     res
 end
 
-function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}; checksorted = true, checkgrouped = true) where S
-    res = Dict{String, Float64}()
-
+function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S    
+    res = Dict{String, outType}()
     if checksorted && issorted(x)
-        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, Float64}
+        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
     elseif checkgrouped && isgrouped(x)
-        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, Float64}
+        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
     else
         y = hash.(x)        
         grouptwo!(y, x);
         if isgrouped(y,x)
-            res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, Float64}
+            res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
         end
     end
     return res
