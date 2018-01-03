@@ -4,6 +4,29 @@ using FastGroupBy, StatsBase, DataFrames
 import DataFrames.DataFrame
 import Base: Reverse
 using Base.Test
+using CategoricalArrays, PooledArrays, StatsBase
+
+
+# fastby for CategoricalArrays and PooledArrays
+tic()
+const M=10_000_000; const K=100; 
+pools = unique([randstring(rand(1:32)) for i = 1:M÷K]);
+
+byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), M), CategoricalPool(pools, false));
+valvec = rand(M);
+@time cmres = countmap(byvec, weights(valvec)); #76
+@time fnrs = fastby!(sum, byvec, valvec); # 24
+@test length(cmres) == length(fnrs)
+@test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
+
+byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), M)), pools);
+valvec = rand(M);
+@time cmres = countmap(byvec, weights(valvec)); #38
+@time fnrs = fastby!(sum, byvec, valvec); # 21
+
+@test length(cmres) == length(fnrs)
+@test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
+toc()
 
 # String sort
 tic()

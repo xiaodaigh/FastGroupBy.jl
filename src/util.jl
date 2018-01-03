@@ -65,3 +65,9 @@ function isgrouped(grps::AbstractVector)
   end
   return true
 end
+
+
+"Generate CategoricalArrays"
+function genca(refs::Vector{U}, pool::Vector{T}) where {U<:Unsigned, T}
+    CategoricalArray{T, 1}(rand(U(1):U(length(pool)), length(refs)), CategoricalPool(pools, false));
+end

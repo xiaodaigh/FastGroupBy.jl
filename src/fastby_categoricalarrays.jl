@@ -1,15 +1,4 @@
-
-
-import FastGroupBy.fastby!
-
-
-pools = [randstring(rand(1:32)) for i = 1:1_000_000]
-
-byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(1_000_000), 100_000_000), CategoricalPool(pools, false))
-valvec = ones(100_000_000)
-
-
-function fastby!(fn::Function, byvec::Union{PooledArray, CategoricalArray{pooltype, indextype}}, valvec::AbstractVector{S}, outType = valvec[1:1] |> fn |> typeof) where {S, pooltype, indextype}
+function fastby!(fn::Function, byvec::Union{PooledArray{pooltype, indextype}, CategoricalArray{pooltype, indextype}}, valvec::AbstractVector{S}, outType = valvec[1:1] |> fn |> typeof) where {S, pooltype, indextype}
     l = length(byvec.pool)
    
     # count the number of occurences of each ref
@@ -55,6 +44,3 @@ function fastby!(fn::Function, byvec::Union{PooledArray, CategoricalArray{poolty
 
     return res
 end
-
-cmres = ans
-fnrs = fastby!(sum, byvec, valvec)
