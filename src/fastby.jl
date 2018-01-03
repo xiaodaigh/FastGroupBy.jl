@@ -4,13 +4,40 @@ Fast Group By algorithm
 
 fastby(fn::Function, byvec, valvec, outType = typeof(fn(valvec[1:1]))) =  fastby!(fn, copy(byvec), copy(valvec), outType)
 
-# fastby(fn, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
+fastby(fn::Function, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
 
-# fastby(fn, byvec, valvec, outType) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) || fastby!(fn, copy(byvec), copy(valvec), outType)
+fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df, bycol, bycol)
 
-fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
+function fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol)
+    dictres = fastby!(fn, copy(column(df, bycol)), copy(column(df, valcol)))
+    DataFrame(bycol = keys(dictres) |> collect, valcol = values(dictres) |> collect)
+end
 
-# fastby(fn, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol, outType = Type{DataFrame}) = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
+# function fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, outType = typeof(fn(df[1,:])))
+#     # dictres = fastby!(fn, copy(column(df, bycol)), copy(column(df,valcol)))
+#     l = size(df,1)
+#     row_id = fcollect(l)
+#     bycolval = copy(column(df,bycol))
+#     grouptwo!(bycolval, row_id)
+    
+#     last_bycolval = bycolval[1]
+#     lo = 1
+#     hi = 1
+#     res = Dict{eltype(bycolval), outType}()
+#     for i = 2:length(bycolval)
+#         if last_bycolval != bycolval[i]
+#             hi = i - 1
+#             res[last_bycolval] = fn(df[lo:hi,:])
+#             last_bycolval = bycolval[i]
+#             lo = i
+#         end
+#     end
+
+#     res[bycolval[l]] = fn(df[lo:l])
+#     fastby(fn, df, bycol, bycol) 
+# end
+
+
 
 function fastby(fn::Function, x::Vector{Bool}, y)
     # TODO: fast path for sum and mean

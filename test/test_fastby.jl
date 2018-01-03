@@ -1,14 +1,48 @@
 using Revise
 using FastGroupBy, BenchmarkTools
 
+using DataFrames, CSV
+
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"));
+
+g(iris) = by(iris, :Species, size)
+@time g(iris)
+@time fastby(size, iris, :Species)
+
+
+# using RCall
+# R"""
+# library(future)
+# plan(multiprocess)
+
+# library(data.table)
+# library(feather)
+# write_feather(rbindlist(future_lapply(list.files("d:/data/fannie_mae/Acquisition_all/",full.names = T), fread)), "d:/fm.feather")
+# gc()
+# """
+
+# files = readdir("d:/data/fannie_mae/Acquisition_all/")#[rand(1:end, 5)]
+# @time fmq3 = CSV.read.("d:/data/fannie_mae/Acquisition_all/".*files, delim='|', rows_for_type_detect = 713316, header=false);
+# @time fmq4 = reduce(vcat, fmq3);
+
+# using JLD2, Feather
+# Feather.write("d:/data/fm5.feather", fmq4);
+
+# @time fmq4 = Feather.read("d:/fm.feather");
+g(fmq4) = aggregate(fmq4[:,[:V20,:V5]], :V20, mean)
+@time g(fmq4);
+@time fastby(mean, fmq4, :V20, :V5);
+
+
+
+
+
 const M=100_000_000; const K=100;
 srand(1);
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 # using FastGroupBy.radixsort! to sort strings of length 8
 y = repeat([1], inner=length(svec1));
 @time a = fastby!(sum, svec1, y);
-
-
 
 using StatsBase
 srand(1);
