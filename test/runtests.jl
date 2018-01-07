@@ -2,9 +2,8 @@ using Revise
 using FastGroupBy, StatsBase, DataFrames
 # using SortingAlgorithms
 import DataFrames.DataFrame
-import Base: Reverse
 using Base.Test
-using CategoricalArrays, PooledArrays, StatsBase
+using CategoricalArrays, PooledArrays
 
 const M=10_000_000; const K=100; 
 
@@ -51,7 +50,7 @@ svec1 = rand([Base.randstring(rand(1:32)) for k in 1:M÷K], M);
 @time res1 = sort(svec1, alg = StringRadixSort, rev = true)
 @test issorted(res1, rev = true)
 
-@time res1 = sort(svec1, alg = StringRadixSort, order = Reverse)
+@time res1 = sort(svec1, alg = StringRadixSort, rev=true)
 @test issorted(res1, rev = true)
 
 @time sort!(svec1);
