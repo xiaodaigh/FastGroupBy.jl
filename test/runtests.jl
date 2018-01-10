@@ -1,4 +1,4 @@
-using Revise
+# using Revise
 using FastGroupBy, StatsBase, DataFrames
 # using SortingAlgorithms
 import DataFrames.DataFrame
@@ -43,6 +43,14 @@ toc()
 # String sort
 tic()
 # const M=1000; const K=100; 
+svec1 = rand([Base.randstring(rand(1:4)) for k in 1:M÷K], M);
+@time res1 = sort(svec1, alg = StringRadixSort)
+@test issorted(res1)
+
+svec1 = rand([Base.randstring(rand(1:8)) for k in 1:M÷K], M);
+@time res1 = sort(svec1, alg = StringRadixSort)
+@test issorted(res1)
+
 svec1 = rand([Base.randstring(rand(1:32)) for k in 1:M÷K], M);
 @time res1 = sort(svec1, alg = StringRadixSort)
 @test issorted(res1)
@@ -50,26 +58,23 @@ svec1 = rand([Base.randstring(rand(1:32)) for k in 1:M÷K], M);
 @time res1 = sort(svec1, alg = StringRadixSort, rev = true)
 @test issorted(res1, rev = true)
 
-@time res1 = sort(svec1, alg = StringRadixSort, rev=true)
-@test issorted(res1, rev = true)
-
 @time sort!(svec1);
 @test issorted(svec1)
 
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
-@time radixsort_lsd!(svec1);
+@time radixsort!(svec1);
 @test issorted(svec1)
 
 svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M);
-@time radixsort_lsd!(svec1);
+@time radixsort!(svec1);
 @test issorted(svec1)
 
 svec1 = rand([string(rand(Char.(32:126), rand(1:24))...) for k in 1:M÷K], M);
-@time radixsort_lsd!(svec1);
+@time radixsort!(svec1);
 @test issorted(svec1)
 
 svec1 = rand([string(rand(Char.(32:126), rand(1:32))...) for k in 1:M÷K], M);
-@time radixsort_lsd!(svec1);
+@time radixsort!(svec1);
 @test issorted(svec1)
 toc()
 
@@ -96,7 +101,6 @@ expected_result = Dict(88 => 11, 8 => 3, 888 => 7)
 byvec  = ["grpA", "grpC", "grpB", "grpA", "grpC", "grpA"]
 valvec = [1     , 2     , 3     , 4     , 5     , 6     ]
 grpsum = fastby!(sum, byvec, valvec)
-@which fastby!(sum, byvec, valvec)
 expected_result = Dict("grpA" => 11, "grpB" => 3, "grpC" => 7)
 @test grpsum == expected_result
 

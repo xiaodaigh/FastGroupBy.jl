@@ -24,7 +24,7 @@ export fastby!, column, sumby, sumby!, load_bits, fastby, sort!
 export sumby_contiguous, sumby_dict, sumby_radixgroup!, isgrouped
 export sumby_radixsort!, sumby_sortperm, sumby
 export sumby_multi_rs, fsortandperm_radix!,sorttwo!,fcollect, grouptwo!
-export radixsort_lsd!, Bits24, Bits192, str_qsort!, three_way_radix_qsort!
+export radixsort!, str_qsort!, three_way_radix_qsort!, radixsort
 export StringRadixSort
 
 ##############################################################################
@@ -48,7 +48,7 @@ include("sortandperm.jl")
 include("sumby_multithreaded.jl")
 include("util.jl")
 include("grouptwo.jl")
-include("string_sort/string_radixsort.jl")
+include("string_sort/string_radix_sort.jl")
 include("fastby.jl")
 include("fastby_strings.jl")
 include("fastby_categoricalarrays.jl")

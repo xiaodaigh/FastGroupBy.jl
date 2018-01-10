@@ -37,8 +37,6 @@ end
 #     fastby(fn, df, bycol, bycol) 
 # end
 
-
-
 function fastby(fn::Function, x::Vector{Bool}, y)
     # TODO: fast path for sum and mean
     Dict{Bool, typeof(fn(y[1:1]))}(
@@ -66,6 +64,19 @@ function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector
     l = length(byvec)
     grouptwo!(byvec, valvec)
     return _contiguousby(fn, byvec, valvec, outType)
+end
+
+
+"""
+fastby! for multiple inputs
+"""
+function fastby(fn::Function, df::DataFrame, byvec::AbstractVector{Symbol})
+    indexes = fcollect(size(df,1))
+    for bv in reverse(byvec)
+        grouptwo!(df[bv], indexes)
+    end
+    indexes
+    # df[indexes,:]
 end
 
 

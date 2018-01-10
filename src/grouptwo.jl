@@ -2,10 +2,7 @@ import Base: isbits, sizeof
 using SortingAlgorithms
 import SortingAlgorithms: RADIX_SIZE, RADIX_MASK
 
-# const RADIX_SIZE = 20
-# const RADIX_MASK = UInt(2^20-1)
-
-function grouptwo!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T <: BaseRadixSortSafeTypes,S}
+function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTypes}
     l = length(vs)
    
 
@@ -67,7 +64,7 @@ function grouptwo!(vs::AbstractVector{T}, index::AbstractVector{S}) where {T <: 
     (vs, index)
 end
 
-function grouptwo!(vs::AbstractVector{Bool}, index::AbstractVector{S}) where S
+function grouptwo!(vs::AbstractVector{Bool}, index)
     l = length(vs)
 
     ts = similar(vs)
@@ -104,7 +101,7 @@ function grouptwo!(vs::AbstractVector{Bool}, index::AbstractVector{S}) where S
     return res
 end
 
-function grouptwo!(byvec::AbstractVector{String}, valvec::AbstractVector{S}, pointer_type = UInt) where S
+function grouptwo!(byvec::AbstractVector{String}, valvec, pointer_type = UInt)
     lens = reduce((x,y) -> max(x,sizeof(y)), 0, byvec)
     iters = ceil(lens/sizeof(pointer_type))
     indexes = fcollect(length(byvec))
