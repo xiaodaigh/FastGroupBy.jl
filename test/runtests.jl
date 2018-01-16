@@ -124,3 +124,47 @@ xdict = Dict(zip(x[:id],x[:val_sum]))
 length(xdict) == length(y) && [xdict[k] ≈ y[k] for k in keys(xdict)] |> all
 toc()
 
+# fastby multi
+tic()
+srand(1);
+using Revise
+using FastGroupBy, DataFrames
+# import Base: getindex, similar, setindex!, size
+M = 100_000_000; K = 100
+val = rand(round.(rand(K)*100,4), M);
+df = DataFrame(id1 = rand("id".*dec.(1:100,3), M), id2 = rand("id".*dec.(1:100,3), M), val = val);
+@time y = fastby(sum, df, [:id1,:id2]); # 0.4
+
+import Base.size
+
+@time byvec = copy(df[:id2]);
+# @time FastGroupBy.sortperm_radixsort(byvec);
+@time valvec = fcollect(size(df,1));
+@time grouptwo!(byvec, valvec);
+
+# @code_warntype grouptwo!(byvec, valvec);
+
+
+
+
+# df = DataFrame(id1 = rand(1:Int(round(M/K)), M), id2 = rand(1:Int(round(M/K)), M), val = val);
+@time x = DataFrames.aggregate(df, [:id1,:id2], sum); # 2.4 secs # 23
+@time y = fastby(sum, df, [:id1,:id2]); # 0.4
+# import FastGroupBy.fastby!
+
+fn = sum
+byvec = [:id1,:id2]
+toc()
+
+
+@time ab = load_bits.(UInt, byvec)
+@time valvec = fcollect(size(df,1))
+@time grouptwo!(ab, valvec);
+# @time sorttwo!(ab,i);
+
+
+@time abc(df)
+
+
+
+@code_warntype fastby!(sum, df, [:id1,:id2]);

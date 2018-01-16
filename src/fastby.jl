@@ -67,13 +67,14 @@ function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector
 end
 
 
+# import Base.size
 """
 fastby! for multiple inputs
 """
 function fastby(fn::Function, df::DataFrame, byvec::AbstractVector{Symbol})
-    indexes = fcollect(size(df,1))
+    @time indexes = fcollect(size(df,1))
     for bv in reverse(byvec)
-        grouptwo!(df[bv], indexes)
+        @time grouptwo!(copy(df[bv]), indexes)
     end
     indexes
     # df[indexes,:]

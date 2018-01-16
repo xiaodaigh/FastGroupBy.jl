@@ -23,3 +23,5 @@ build/assets/
 strqsort\.dll
 
 *.dll
+
+*.png

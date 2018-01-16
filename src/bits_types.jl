@@ -54,10 +54,11 @@ uint_mapping(::Base.Order.ForwardOrdering, x::Bits192) = x
 zero(::Type{Bits192}) = Bits192(0)
 
 Int(x::Bits192) = Base.Intrinsics.trunc_int(Int, x)
-UInt16(x::Bits192) = Base.Intrinsics.trunc_int(UInt16, x)
+
+convert(::Type{UInt16}, x::Bits192) = Base.Intrinsics.trunc_int(UInt16, x)
 
 # promote_rule(::Type{Bits192}, ::Type{Integer}) = Bits192
-(&)(x::Bits192, y::UInt16) = (&)(UInt16(x), y)
+(&)(x::Bits192, y::UInt16) = UInt16(x) & y
 
 #########################################################################
 #Bits 256
