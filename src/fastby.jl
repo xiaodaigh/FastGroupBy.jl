@@ -67,17 +67,116 @@ function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector
 end
 
 
-# import Base.size
+using SortingLab
 """
 fastby! for multiple inputs
 """
-function fastby(fn::Function, df::DataFrame, byvec::AbstractVector{Symbol})
-    @time indexes = fcollect(size(df,1))
-    for bv in reverse(byvec)
-        @time grouptwo!(copy(df[bv]), indexes)
+function fastby1(fn::Function, byvec::Tuple, valvec::AbstractVector)
+    l = length(byvec)
+    @time indexes = fsortperm(byvec[l])
+    @inbounds for i in l-1:1
+        @time bv = byvec[i]
+        # @time bvv = @view bv[indexes]
+        @time bvv = bv[indexes]
+        @time indexes1 = fsortperm(bvv)
+        @time indexes .= indexes[indexes1]
     end
-    indexes
-    # df[indexes,:]
+
+    byvec_sorted = ([bv[indexes] for bv in byvec]...)
+    byvec_sorted
+end
+
+function fastby2(fn::Function, byvec::Tuple, valvec::AbstractVector)
+    @time indexes = fsortperm(byvec[1].*byvec[2])
+    
+    byvec_sorted = ([bv[indexes] for bv in byvec]...)
+    byvec_sorted
+end
+
+function fastby(fn::Function, byvec::Tuple, valvec::AbstractVector)
+    l = length(valvec)
+    indexes = fcollect(l)
+    for i in length(byvec):1
+        bv = byvec[i][indexes]
+        (tmp, indexes) = grouptwo!(bv, indexes)
+    end
+    return indexes
+    
+    # # by now all the groups are done
+    # byvec_sorted = ([byvec[i][indexes] for i =1:length(byvec)]...)
+
+    # changed = Vector{Bool}(l - 1)
+
+    
+    # valvec = valvec[indexes]
+
+    # lo = 1
+    # lastrow = ([a[lo] for a in byvec_sorted]...)
+
+    # cm = Dict{typeof(lastrow), typeof(fn(valvec[1:1]))}()
+    # # df1 = DataFrame()
+    
+    # for i in 2:l
+    #     newrow = ([a[i] for a in byvec_sorted]...)
+    #     if newrow != lastrow
+    #         cm[lastrow] = fn(valvec[lo:i-1])
+    #         lo = i
+    #         # lastrow = ([a[lo] for a in byvec_sorted]...)
+    #         break
+    #     end
+    # end
+    
+    # for i in lo:l
+    #     newrow = ([a[i] for a in byvec_sorted]...)
+    #     if newrow != lastrow
+    #         cm[lastrow] = fn(valvec[lo:i-1])
+    #         lo = i
+    #         # lastrow = ([a[lo] for a in byvec_sorted]...)
+    #     end
+    # end
+
+    # # cm[lastrow] = fn(valvec[lo:l])
+    # cm
+end
+
+function fastby(fn::Function, df::DataFrame, byvec::AbstractVector{Symbol}, valsymbol::Symbol)
+    indexes = fcollect(size(df,1))
+    for bv in reverse(byvec)
+        cdfbv = df[bv][indexes]
+        grouptwo!(cdfbv, indexes)
+    end
+    
+    # by now all the groups are done
+    dfiv = df[indexes, byvec]
+    lo = 1
+    lastrow = dfiv[lo,:]
+    valvec = df[valsymbol]
+
+    # df1 = DataFrame()
+    for i in 2:size(dfiv,1)
+        if dfiv[i,:] != lastrow
+            lastrow[valsymbol] = fn(valvec[lo:i-1])
+            
+            # df1 = lastrow
+            lo = i
+            lastrow = dfiv[lo,byvec]
+            break
+        end
+    end
+    
+    for i in lo:size(dfiv,1)
+        if dfiv[i,:] != lastrow
+            lastrow[valsymbol] = fn(valvec[lo:i-1])
+            # df1 = vcat(df1, lastrow)
+            lo = i
+            lastrow = dfiv[lo,byvec]
+        end
+    end
+
+    lastrow[valsymbol] = fn(valvec[lo:size(dfiv,1)])
+    lastrow
+    # df1 = vcat(df1, lastrow)
+    # df1
 end
 
 
