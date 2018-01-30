@@ -40,44 +40,6 @@ valvec = rand(M);
 @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
 toc()
 
-# String sort
-tic()
-# const M=1000; const K=100; 
-svec1 = rand([Base.randstring(rand(1:4)) for k in 1:M÷K], M);
-@time res1 = sort(svec1, alg = StringRadixSort)
-@test issorted(res1)
-
-svec1 = rand([Base.randstring(rand(1:8)) for k in 1:M÷K], M);
-@time res1 = sort(svec1, alg = StringRadixSort)
-@test issorted(res1)
-
-svec1 = rand([Base.randstring(rand(1:32)) for k in 1:M÷K], M);
-@time res1 = sort(svec1, alg = StringRadixSort)
-@test issorted(res1)
-
-@time res1 = sort(svec1, alg = StringRadixSort, rev = true)
-@test issorted(res1, rev = true)
-
-@time sort!(svec1);
-@test issorted(svec1)
-
-svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
-@time radixsort!(svec1);
-@test issorted(svec1)
-
-svec1 = rand([string(rand(Char.(32:126), rand(1:16))...) for k in 1:M÷K], M);
-@time radixsort!(svec1);
-@test issorted(svec1)
-
-svec1 = rand([string(rand(Char.(32:126), rand(1:24))...) for k in 1:M÷K], M);
-@time radixsort!(svec1);
-@test issorted(svec1)
-
-svec1 = rand([string(rand(Char.(32:126), rand(1:32))...) for k in 1:M÷K], M);
-@time radixsort!(svec1);
-@test issorted(svec1)
-toc()
-
 # Basic sumby and fastby
 tic()
 a = [1, 1, 2, 3, 3];
@@ -123,48 +85,3 @@ df = DataFrame(id = id, val = val);
 xdict = Dict(zip(x[:id],x[:val_sum]))
 length(xdict) == length(y) && [xdict[k] ≈ y[k] for k in keys(xdict)] |> all
 toc()
-
-# fastby multi
-tic()
-srand(1);
-using Revise
-using FastGroupBy, DataFrames
-# import Base: getindex, similar, setindex!, size
-M = 100_000_000; K = 100
-val = rand(round.(rand(K)*100,4), M);
-df = DataFrame(id1 = rand("id".*dec.(1:100,3), M), id2 = rand("id".*dec.(1:100,3), M), val = val);
-@time y = fastby(sum, df, [:id1,:id2]); # 0.4
-
-import Base.size
-
-@time byvec = copy(df[:id2]);
-# @time FastGroupBy.sortperm_radixsort(byvec);
-@time valvec = fcollect(size(df,1));
-@time grouptwo!(byvec, valvec);
-
-# @code_warntype grouptwo!(byvec, valvec);
-
-
-
-
-# df = DataFrame(id1 = rand(1:Int(round(M/K)), M), id2 = rand(1:Int(round(M/K)), M), val = val);
-@time x = DataFrames.aggregate(df, [:id1,:id2], sum); # 2.4 secs # 23
-@time y = fastby(sum, df, [:id1,:id2]); # 0.4
-# import FastGroupBy.fastby!
-
-fn = sum
-byvec = [:id1,:id2]
-toc()
-
-
-@time ab = load_bits.(UInt, byvec)
-@time valvec = fcollect(size(df,1))
-@time grouptwo!(ab, valvec);
-# @time sorttwo!(ab,i);
-
-
-@time abc(df)
-
-
-
-@code_warntype fastby!(sum, df, [:id1,:id2]);
