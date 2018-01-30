@@ -5,7 +5,6 @@ import Base: getindex,setindex!, similar
 
 function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTypes}
     l = length(vs)
-   
 
     ts = similar(vs)
     index1 = similar(index)
@@ -105,34 +104,20 @@ end
 function grouptwo!(byvec::AbstractVector{String}, valvec)
     lens = maximum(sizeof, byvec)
     iters = Int(ceil(lens/sizeof(UInt)))
-    # indexes = fcollect(length(byvec))
-    # sv = FastGroupBy.StringIndexVector(byvec, valvec)
-    sv = FastGroupBy.ValIndexVector(pointer.(byvec), valvec)
+    sv = FastGroupBy.ValIndexVector(byvec, valvec)
     for i = iters:-1:1
         # compute the bit representation for the next 8 bytes
-        bitsrep = load_bits.(UInt, sv.svec, sizeof.(sv.svec), (i-1)*sizeof(UInt))
-        @time grouptwo!(bitsrep, sv)
+        bitsrep = load_bits.(UInt, sv.svec, (i-1)*sizeof(UInt))
+        grouptwo!(bitsrep, sv)
     end
 
     return sv
-    # return (Base.unsafe_pointer_to_objref.(sv.svec-8), sv.index)
-
-    # return (byvec[indexes], valvec[indexes])
-
-    # byvec1 = byvec[indexes]
-    # valvec1 = valvec[indexes]
-
-    # for i = 1:length(byvec)
-    #     @inbounds byvec[i] = byvec1[i]
-    #     @inbounds valvec[i] = valvec1[i]
-    # end
-    # (byvec, valvec)
 end
 
 
-struct ValIndexVector{T}
+struct ValIndexVector{T,S}
     svec::Vector{T}
-    index::Vector{Int}
+    index::Vector{S}
 end
 
 function setindex!(siv::ValIndexVector, X::ValIndexVector, inds)
