@@ -5,35 +5,37 @@ import DataFrames.DataFrame
 using Base.Test
 using CategoricalArrays, PooledArrays
 
-const M=10_000_000; const K=100; 
+include("fgroupreduce_fby.jl")
+
+N=1_000_000; K=100;
 
 # fastby for CategoricalArrays and PooledArrays
 tic()
-pools = unique([randstring(rand(1:32)) for i = 1:M÷K]);
-byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), M), CategoricalPool(pools, false));
-valvec = rand(M);
+pools = unique([randstring(rand(1:32)) for i = 1:N÷K]);
+byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), N), CategoricalPool(pools, false));
+valvec = rand(N);
 @time cmres = countmap(byvec, weights(valvec)); #76
 @time fnrs = fastby(sum, byvec, valvec); # 24
 @test length(cmres) == length(fnrs)
 @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
 
-byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), M)), pools);
+byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), N)), pools);
 @time cmres = countmap(byvec, weights(valvec)); #38
 @time fnrs = fastby(sum, byvec, valvec); # 21
 @test length(cmres) == length(fnrs)
 @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
 
 
-pools = unique([randstring(rand(1:32)) for i = 1:M÷K]);
-byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), M), CategoricalPool(pools, false));
-valvec = rand(M);
+pools = unique([randstring(rand(1:32)) for i = 1:N÷K]);
+byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), N), CategoricalPool(pools, false));
+valvec = rand(N);
 @time cmres = countmap(byvec, weights(valvec)); #76
 @time fnrs = fastby!(sum, byvec, valvec); # 24
 @test length(cmres) == length(fnrs)
 @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
 
-byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), M)), pools);
-valvec = rand(M);
+byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), N)), pools);
+valvec = rand(N);
 @time cmres = countmap(byvec, weights(valvec)); #38
 @time fnrs = fastby!(sum, byvec, valvec); # 21
 @test length(cmres) == length(fnrs)
@@ -77,8 +79,8 @@ toc()
 # sumby vs DataFrames.aggregate
 tic()
 srand(1);
-id = rand(1:Int(round(M/K)), M);
-val = rand(round.(rand(K)*100,4), M);
+id = rand(1:Int(round(N/K)), N);
+val = rand(round.(rand(K)*100,4), N);
 df = DataFrame(id = id, val = val);
 @time x = DataFrames.aggregate(df, :id, sum); # 3.3 seconds
 @time y = sumby!(df, :id, :val); # 0.4
