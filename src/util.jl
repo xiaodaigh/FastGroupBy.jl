@@ -71,3 +71,26 @@ end
 function genca(refs::Vector{U}, pool::Vector{T}) where {U<:Unsigned, T}
     CategoricalArray{T, 1}(rand(U(1):U(length(pool)), length(refs)), CategoricalPool(pools, false));
 end
+
+"Simple data structure for carrying a string vector and its index; this allows
+`sorttwo!` to sort the radix of the string vector and reorder the string and its
+index at the same time opening the way for faster sort_perm"
+# struct StringIndexVector
+#     svec::Vector{String}
+#     index::Vector{Int}
+# end
+
+
+# function setindex!(siv::StringIndexVector, X::StringIndexVector, inds)
+#     siv.svec[inds] = X.svec
+#     siv.index[inds] = X.index
+# end
+
+# function setindex!(siv::StringIndexVector, X, inds)
+#     siv.svec[inds] = X[1]
+#     siv.index[inds] = X[2]
+# end
+
+# getindex(siv::StringIndexVector, inds::Integer) = siv.svec[inds], siv.index[inds]
+# getindex(siv::StringIndexVector, inds...) = StringIndexVector(siv.svec[inds...], siv.index[inds...])
+# similar(siv::StringIndexVector) = StringIndexVector(similar(siv.svec), similar(siv.index))
