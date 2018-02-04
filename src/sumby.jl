@@ -34,6 +34,9 @@ srand(1);
 ```
 """
 sumby(by, val, alg = :auto) = sumby!(copy(by), copy(val), alg)
+
+sumby(by, val) = sumby!(copy(by), copy(val))
+
 function sumby!(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S} where {T, S<:Number}
     l = length(by)
 

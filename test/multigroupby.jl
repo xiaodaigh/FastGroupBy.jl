@@ -16,8 +16,6 @@ byvec = ([df[:id1], df[:id2]]...);
 # valvec = val;
 fn = sum;
 
-
-
 #######################################################################
 # convert to ShortStrings
 #######################################################################
@@ -214,3 +212,124 @@ setkey(df, id1, id2)
 system.time(df[,sum(val), keyby="id1,id2"])
 """ # 0.45 10m
 
+#######################################################################
+# setting up
+#######################################################################
+using Revise
+using FastGroupBy, DataFrames, BenchmarkTools, SortingLab, ShortStrings
+using SortingAlgorithms
+N = 100_000_000; K = 100
+srand(1);
+r = rand(1:N÷K, N)
+
+@time sortperm(r, alg=RadixSort)
+
+a = rand(rand(Float64, N÷K), N)
+@time sort(a)
+@time sort(a, alg = RadixSort)
+
+@time fsort(a)
+
+rr = "id".*dec.(1:N÷K, 10)
+r = rand(rr, N)
+
+@benchmark fsort($r) samples = 5 seconds = 120
+@benchmark fsort($r, false, (11, 0x007ff)) samples = 5 seconds = 120
+
+
+
+
+@time radixsort(r)
+@time fsort(r, (11, 0x007ff))
+
+@benchmark fsort($r) samples = 5 seconds = 120
+@benchmark fsort($r, (11, 0x007ff)) samples = 5 seconds = 120
+@benchmark fsort($r, (13, 0x00001fff)) samples = 5 seconds = 120
+@benchmark fsort($r, (22, 0x003fffff)) samples = 5 seconds = 120
+
+@benchmark sort($r, alg=RadixSort)
+@benchmark sort($r)
+
+
+
+
+rr = rand(1:Int(N÷2), N)
+rr1 = rand(1:Int(N÷2)-1, N)
+@time sort(rr)
+@time sort(rr1)
+
+using SortingAlgorithms
+@benchmark sortperm($r)
+@benchmark sortperm($r, alg = RadixSort)
+
+rs = [randstring(8) for i = 1:1_000_000]
+rs1 = rand(rs, 100_000_000)
+
+aa(s) = (s |> pointer |> Ptr{UInt32} |> unsafe_load) >> 16
+
+@time sort(rs1, by = aa);
+@time radixsort(rs1);
+@time SortingLab.fsort(rs1, radix)
+
+
+radix_opts = (16, 0xffff)
+
+
+Base.sort!(rs1)
+
+ordr = Base.ord(isless, identity, false, Base.Forward)
+
+using SortingLab, FastGroupBy
+
+function sortandperm!(v::Vector{Int64})
+    a = collect(1:length(v))
+    SortingLab.sorttwo!(v, a)
+    return (v,a)
+end
+
+sortandperm(v) = sortandperm!(copy(v))
+
+@benchmark sortandperm(r) 
+issorted(r)
+
+function sortandperm2!(v::Vector{Int64})
+    a = fcollect(length(v))
+    SortingLab.sorttwo!(v, a)
+    return (v,a)
+end
+
+sortandperm2(v) = sortandperm2!(copy(v))
+
+@benchmark sortandperm2($r)
+
+function fsortperm(v)
+    @time a = collect(UInt32(1):UInt32(length(v)))
+    @time v1 .= (v .<< 32) .| a
+    @time SortingLab.sort32!(v1)
+    @time v1 .= ((v .>> 32) .<< 32) .| ((v1 .<< 32) .>> 32)
+    @time SortingLab.sort32!(v1)
+    @time v1 .& 0xffffffff
+end
+
+@time fsortperm(r);
+
+@benchmark fsortperm($r)
+
+a = fsortperm(r)
+issorted(r[a])
+
+
+
+cv = copy(r)
+r_sorted, r_perm = sortandperm!(r)
+issorted(r_sorted)
+issorted(cv[r_perm])
+
+
+v = r
+min, max = extrema(v)
+(diff, o1) = Base.sub_with_overflow(max, min)
+(rangelen, o2) = Base.add_with_overflow(diff, oneunit(diff))
+if !o1 && !o2 && rangelen < div(n,2)
+    return sort_int_range!(v, rangelen, min)
+end
