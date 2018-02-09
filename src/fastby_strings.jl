@@ -22,7 +22,7 @@ function isgrouped(testgrp, truegrp)
     res
 end
 
-function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S    
+function fastby2!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S    
     res = Dict{String, outType}()
     if checksorted && issorted(x)
         res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
@@ -40,14 +40,38 @@ function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, 
     return res
 end
 
-# srand(1);
-# x = gen_string_vec_id_fixed_len(100_000_000, 10);
-# z = ones(length(x));
-# @time rh = fastby!(x,z; checksorted = false, checkgrouped = false); # 24 seconds
-# @time isgrouped(x)
-# @time rh = fastby!(x,z; checksorted = false, checkgrouped = true); # 2.5 seconds
-# radixsort_lsd!(x)
-# @time rh = fastby!(x, z; checksorted = true, checkgrouped = true); # 2.2 seconds
+function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S    
+    res = Dict{String, outType}()
+    if checksorted && issorted(x)
+        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
+    elseif checkgrouped && isgrouped(x)
+        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
+    else
+        idx = fsortperm(x);
+        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
+    end
+    return res
+end
+
+fastby(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S = fastby!(fn, copy(x), coopy(z), outType, checkedsorted = checkedsorted, checkgrouped = checkgrouped)
+
+if false
+    using DataBench, FastGroupBy, SortingLab, SortingAlgorithms
+    srand(1);
+    # x = gen_string_vec_id_fixed_len(100_000_000, 10);
+    ss = "id".*dec.(1:100,3)
+    x = rand(ss, 10_000_000)
+    z = rand(length(x));
+    
+    @time radixsort(x);
+    @time hx = hash.(x);
+    @time sort(hx, alg=RadixSort);
+    @time rh = fastby2!(sum, x,z; checksorted = false, checkgrouped = false); # 3.45s string; 24 seconds
+    @time isgrouped(x)
+    @time rh = fastby!(x,z; checksorted = false, checkgrouped = true); # 2.5 seconds
+    radixsort_lsd!(x)
+    @time rh = fastby!(x, z; checksorted = true, checkgrouped = true); # 2.2 seconds
+end
 
 # srand(1);
 # x = gen_string_vec_fixed_len(100_000_000, 10);
