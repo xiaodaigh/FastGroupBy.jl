@@ -35,7 +35,7 @@ srand(1);
 """
 sumby(by, val, alg = :auto) = sumby!(copy(by), copy(val), alg)
 
-sumby(by, val) = sumby!(copy(by), copy(val))
+# sumby(by, val) = sumby!(copy(by), copy(val))
 
 function sumby!(by::AbstractVector{T},  val::AbstractVector{S}; alg = :auto)::Dict{T,S} where {T, S<:Number}
     l = length(by)
@@ -315,13 +315,13 @@ end
 function sumby!(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S}) where {S<:Number}
   l = length(by.pool)
   res = zeros(S, l)
-  #refs = Int64.(by.refs)
-  refs = by.refs
 
-  for (i, v) in zip(refs, val)
+  for (i, v) in zip(by.refs, val)
     @inbounds res[i] += v
   end
   return Dict(by.pool[i] => res[i] for i in S(1):S(l))
 end
+
+sumby(by::Union{PooledArray, CategoricalArray}, val::AbstractVector{S}) where {S<:Number} = sumby!(by, val)
 
 sumby!(dt::Union{AbstractDataFrame, NDSparse}, by::Symbol, val::Symbol) = sumby!(column(dt,by), column(dt,val))
