@@ -1,20 +1,21 @@
-function fastby!(fn::Function, byvec::Union{PooledArray{pooltype, indextype}, CategoricalArray{pooltype, indextype}}, valvec::AbstractVector{S}, outType = valvec[1:1] |> fn |> typeof) where {S, pooltype, indextype}
+function fastby!(fn::Function, 
+    byvec::Union{PooledArray{pooltype, indextype}, CategoricalVector{pooltype, indextype}},
+    # byvec::CategoricalVector{pooltype, indextype}, 
+    valvec::AbstractVector{S}, 
+    outType::Type{W}= valvec[1:1] |> fn |> typeof) where {S, pooltype, indextype, W}
     l = length(byvec.pool)
    
     # count the number of occurences of each ref
-   
-
-    res = Dict{pooltype, outType}()
-
-
+    res = Dict{pooltype, W}()
     if fn == Base.sum
-        resvec = zeros(outType, l)
+        resvec = zeros(W, l)
         @inbounds for (r,v) in zip(byvec.refs, valvec)
             resvec[r] += v
         end
-        for (i,c) in enumerate(resvec)
+        @inbounds for (i,c) in enumerate(resvec)
             res[byvec.pool[i]] = c
         end
+        # res = Dict{pooltype, W}(byvec.pool[i] => resvec[i] for i in 1:l)
     else
         counter = zeros(UInt, l)
         for r1 in byvec.refs
@@ -58,10 +59,10 @@ function fastby!(fn::Function, byvec::Union{PooledArray{pooltype, indextype}, Ca
     return res
 end
 
-function cate_sum_by(byvec::Union{PooledArray{pooltype, indextype}, CategoricalArray{pooltype, indextype}}, valvec::AbstractVector{S}) where {S, pooltype, indextype}
+function cate_sum_by(byvec::Union{PooledArray{pooltype, indextype}, CategoricalArray{pooltype, indextype}}, valvec::AbstractVector{S}, outType::Type{W} = valvec[1:1] |> sum |> typeof) where {S, pooltype, indextype, W}
     l = length(byvec.pool)
     # count the number of occurences of each ref
-    res = Dict{pooltype, S}()
+    res = Dict{pooltype, W}()
     resvec = zeros(S, l)
     @inbounds for (r,v) in zip(byvec.refs, valvec)
         resvec[r] += v
@@ -69,4 +70,5 @@ function cate_sum_by(byvec::Union{PooledArray{pooltype, indextype}, CategoricalA
     for (i,c) in enumerate(resvec)
         res[byvec.pool[i]] = c
     end
+    res
 end
