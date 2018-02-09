@@ -2,9 +2,9 @@
 Fast Group By algorithm
 """
 
-fastby(fn::Function, byvec, valvec, outType = typeof(fn(valvec[1:1]))) =  fastby!(fn, copy(byvec), copy(valvec), outType)
+fastby(fn::Function, byvec, valvec, ::Type{outType} = typeof(fn(valvec[1:1]))) where outType =  length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec), outType)
 
-fastby(fn::Function, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
+# fastby(fn::Function, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
 
 fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df, bycol, bycol)
 
@@ -44,7 +44,7 @@ function fastby(fn::Function, x::Vector{Bool}, y)
         false => fn(@view(y[.!x])))
 end
 
-function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T, S}
+function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, ::Type{outType} = typeof(fn(valvec[1:1]))) where {T, S, outType}
     length(byvec) == length(valvec) || throw(DimensionMismatch())
     # if length(byvec) == 0
     #     return Dict{T, outType}()
@@ -60,7 +60,7 @@ end
 """
 Internal: single-function fastby
 """
-function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
+function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, ::Type{outType} = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S, outType}
     l = length(byvec)
     grouptwo!(byvec, valvec)
     return _contiguousby(fn, byvec, valvec, outType)
@@ -183,7 +183,7 @@ end
 """
 Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
 """
-function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, outType = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
+function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, ::Type{outType} = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S, outType}
     l = length(byvec)
     lastby = byvec[1]
     res = Dict{T,outType}()
