@@ -40,7 +40,7 @@ function fastby2!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S},
     return res
 end
 
-function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S    
+function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, ::Type{outType} = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where {S, outType}    
     res = Dict{String, outType}()
     if checksorted && issorted(x)
         res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
@@ -48,12 +48,13 @@ function fastby!(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, 
         res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
     else
         idx = fsortperm(x);
-        res = FastGroupBy._contiguousby(fn, x, z)::Dict{String, outType}
+        res = FastGroupBy._contiguousby(fn, @view(x[idx]), @view(z[idx]))::Dict{String, outType}
     end
     return res
 end
 
-fastby(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, outType = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where S = fastby!(fn, copy(x), coopy(z), outType, checkedsorted = checkedsorted, checkgrouped = checkgrouped)
+fastby(fn::Function, x::AbstractVector{String}, z::AbstractVector{S}, ::Type{outType} = typeof(fn(z[1:1])); checksorted = true, checkgrouped = true) where {S, outType} = 
+    fastby!(fn, copy(x), copy(z), outType, checksorted = checksorted, checkgrouped = checkgrouped)
 
 if false
     using DataBench, FastGroupBy, SortingLab, SortingAlgorithms

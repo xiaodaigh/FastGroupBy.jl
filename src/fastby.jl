@@ -209,6 +209,49 @@ function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractV
     return res
 end
 
+"""
+Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
+and return a vector
+"""
+function _contiguousby_vec(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, ::Type{outType} = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S, outType}
+    l = length(byvec)
+
+    lastby = byvec[1]
+    n_uniques = 0
+    # count n of uniques
+    for i = 2:l
+        @inbounds byval = byvec[i]
+        if byval != lastby
+            n_uniques += 1
+            lastby = byval
+        end
+    end
+    n_uniques += 1
+
+    resby = Vector{T}(n_uniques)
+    resout = Vector{outType}(n_uniques)
+
+    lastby = byvec[1]
+    j = 1
+    outrow = 1
+    for i = 2:l
+        @inbounds byval = byvec[i]
+        if byval != lastby
+            viewvalvec = @view valvec[j:i-1]
+            @inbounds resby[outrow] = lastby
+            @inbounds resout[outrow] = fn(viewvalvec)
+            outrow += 1
+            j = i
+            @inbounds lastby = byval
+        end
+    end
+
+    viewvalvec = @view valvec[j:l]
+    @inbounds resby[end] = byvec[end]
+    @inbounds resout[end] = fn(viewvalvec)
+    return resby, resout
+end
+
 
 """
 Internal multi-function fastby
@@ -237,4 +280,81 @@ function _fastby!(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::Abstra
     return res
 end
 
+"""
+Internal multi-function fastby
+"""
+function _fastby!(fn::Vector{Function}, byvec::CategoricalVector, valvec::AbstractVector{S}) where {S}
+    l = length(byvec)
+    grouptwo!(byvec, valvec)
+    lastby = byvec[1]
+
+    res = Dict{T}()
+
+    j = 1
+
+    for i = 2:l
+        @inbounds byval = byvec[i]
+        if byval != lastby
+            viewvalvec = @view valvec[j:i-1]
+            @inbounds res[lastby] = ((fn1(viewvalvec) for fn1 in fn)...)
+            j = i
+            @inbounds lastby = byvec[i]
+        end
+    end
+
+    viewvalvec = @view valvec[j:l]
+    @inbounds res[byvec[l]] = ((fn1(viewvalvec) for fn1 in fn)...)
+    return res
+end
+
+# group-by categoricalvector
+# multi-function and multi-valvecs
+function fastby(fns::Vector{Function}, byvec::CategoricalVector, valvec::NTuple{2, AbstractVector})
+    # println("wassup")
+    refs = byvec.refs
+    # @time s = SortingLab.fsortperm(refs)
+
+    # TODO generalise this into another function
+    rangelen = length(byvec.pool)
+    RADIX_SIZE = 11
+    vs = SortingLab.fsortandperm_int_range_lsd(refs, rangelen, 1, RADIX_SIZE)
+    s = [Int(vs1.first) for vs1 in vs]
+    refs_grouped = [vs1.second for vs1 in vs]
+    
+    # for i = 1:nvec
+    #     FastGroupBy._contiguousby_vec(fns[i], refs_grouped, valvec[i])
+    #     #, FastGroupBy._contiguousby_vec(fns[2], refs_grouped, valvec[2])
+    # end
+    (
+        byvec.pool.index
+        , FastGroupBy._contiguousby_vec(fns[1], refs_grouped, valvec[1][s])[2]
+        , FastGroupBy._contiguousby_vec(fns[2], refs_grouped, valvec[2][s])[2]
+        )
+end
+
+# group by NTuple 3
+# 
+function fastby(fn::Function, byvec::AbstractVector{T}, valvec::NTuple{3, AbstractVector}) where T <: BaseRadixSortSafeTypes
+    # TODO implement sort and perm to reduce one assignment step
+    s = SortingLab.fsortperm(byvec)
+    @time @inbounds byvecs = byvec[s]
+    
+    # TODO employ a faster RLE (run length encoding) based algorithm
+    vs = Vector(3)
+    @threads for i = 1:3
+        @inbounds vs1 = valvec[i]
+        @inbounds vs[i] = FastGroupBy._contiguousby_vec(fn, byvecs, @view(vs1[s]))[2]
+    end
+    (byvecs, vs...)
+end
+
+
+if false
+end
+
+vi = FastGroupBy.ValIndexVector(rand(1:100,1000), rand(1:100,1000))
+a = [randstring(8) for i = 1:1_000_000]
+
+@time Base.sort(a, by=x->x[1], alg=RadixSort)
+@time SortingLab.radixsort(a)
 

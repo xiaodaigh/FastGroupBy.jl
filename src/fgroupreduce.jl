@@ -70,17 +70,10 @@ function fgroupreduce(fn, byveccv::CategoricalVector, val::Vector{Z}) where Z
     (outbyveccv, outval)
 end
 
-# group reduce for single 
-function fgroupreduce(fn, byvec::Vector{String}, val::Vector{Z}) where Z
-    
-end
-
-
 fgroupreduce!(fn, byveccv::Tuple{T, S}, val) where {T<:CategoricalVector, S<:CategoricalVector} = fgroupreduce!(fn, byveccv, val)
 
 # fgroupreduce for DataFrames
 fgroupreduce(fn, df, bysyms::Tuple{Symbol, Symbol}, val::Symbol) = DataFrame([fgroupreduce(fn, (df[bysyms[1]], df[bysyms[2]]), df[val])...], [bysyms..., val])
-
 
 if false
     a = "id".*dec.(1:100, 3);
