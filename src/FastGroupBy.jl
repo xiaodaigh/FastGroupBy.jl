@@ -7,6 +7,8 @@ module FastGroupBy
 ##
 ##############################################################################
 using SortingAlgorithms, Base.Order, Compat, IndexedTables, DataFrames, StatsBase
+using SortingLab
+using Base.Threads
 import Base: ht_keyindex, rehash!, _setindex!, ht_keyindex2, sort!, sortperm, sortperm!, size
 import SortingAlgorithms: uint_mapping, RADIX_SIZE, RADIX_MASK
 import DataFrames: AbstractDataFrame
@@ -48,10 +50,11 @@ include("grouptwo.jl")
 include("fastby.jl")
 include("fastby_strings.jl")
 include("fastby_shortstrings.jl")
-include("fastby_categoricalarrays.jl")
+include("fastby_categoricalarrays_integer.jl")
 # include("bits_types.jl")
 include("bits_loaders.jl")
 include("fgroupreduce.jl")
+include("contiguousby.jl")
 include("fby_CategoricalVector_multi.jl")
 
 end # module FastGroupBy

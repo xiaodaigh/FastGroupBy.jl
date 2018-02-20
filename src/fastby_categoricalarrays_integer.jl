@@ -1,3 +1,37 @@
+function fastby(fn::Vector{Function}, byvec::CategoricalVector, valvec::Tuple)
+    # TODO generalize for categorical
+    # TODO can just copy the code from fastby
+    fastby(fn, byvec.refs, valvec)
+end
+
+function fastby(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::Tuple) where T <: Integer
+    ab = SortingLab.fsortandperm(byvec)
+    orderx = [b.first for b in ab]
+    # TODO: fix up the output
+    byby = [ab1.second for ab1 in ab]
+
+    # single threaded
+    # val = valvec[1];
+    # valv = @view(val[orderx]);
+    # val2 = valvec[2];
+    # val2v = @view(val2[orderx]);
+    #FastGroupBy.contiguousby(fn, byby, (valv, val2v))
+
+    # multi-threaded
+    res = Vector(length(fn) + 1)
+    @threads for j=1:length(valvec)
+        vi = valvec[j]
+        @inbounds viv = @view(vi[orderx])
+        @inbounds res1 = FastGroupBy._contiguousby_vec(fn[j], byby, viv)
+        res[j+1] = res1[2]
+        if j == 1
+            res[1] = res1[1]
+        end
+    end
+    res
+end
+
+
 function fastby!(fn::Function, 
     byvec::Union{PooledArray{pooltype, indextype}, CategoricalVector{pooltype, indextype}},
     # byvec::CategoricalVector{pooltype, indextype}, 

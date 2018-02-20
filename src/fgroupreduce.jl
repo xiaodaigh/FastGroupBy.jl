@@ -1,5 +1,5 @@
 
-# tuple fgroupreduce
+# tuple of CategoricalArray fgroupreduce
 function fgroupreduce(fn, byveccv::Tuple{T, S}, val::Vector{Z}) where {T<:CategoricalVector, S<:CategoricalVector, Z}
     bv1 = byveccv[1]
     bv2 = byveccv[2]
@@ -70,7 +70,7 @@ function fgroupreduce(fn, byveccv::CategoricalVector, val::Vector{Z}) where Z
     (outbyveccv, outval)
 end
 
-fgroupreduce!(fn, byveccv::Tuple{T, S}, val) where {T<:CategoricalVector, S<:CategoricalVector} = fgroupreduce!(fn, byveccv, val)
+fgroupreduce!(fn, byveccv, val) = fgroupreduce(fn, byveccv, val)
 
 # fgroupreduce for DataFrames
 fgroupreduce(fn, df, bysyms::Tuple{Symbol, Symbol}, val::Symbol) = DataFrame([fgroupreduce(fn, (df[bysyms[1]], df[bysyms[2]]), df[val])...], [bysyms..., val])

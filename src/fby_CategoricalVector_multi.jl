@@ -1,3 +1,4 @@
+# what is this fby?
 function fby!(fn, byveccv::Tuple{T, S}, val) where {T<:CategoricalVector, S<:CategoricalVector}
     bv1 = byveccv[1]
     bv2 = byveccv[2]
