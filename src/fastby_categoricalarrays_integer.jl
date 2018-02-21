@@ -1,35 +1,86 @@
 function fastby(fn::Vector{Function}, byvec::CategoricalVector, valvec::Tuple)
     # TODO generalize for categorical
     # TODO can just copy the code from fastby
-    fastby(fn, byvec.refs, valvec)
+    res = fastby(fn, byvec.refs, valvec)
+    (byvec.pool.index[res[1].+1], res[2:length(res)]...)
 end
 
-function fastby(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::Tuple) where T <: Integer
-    ab = SortingLab.fsortandperm(byvec)
-    orderx = [b.first for b in ab]
-    # TODO: fix up the output
-    byby = [ab1.second for ab1 in ab]
 
-    # single threaded
-    # val = valvec[1];
-    # valv = @view(val[orderx]);
-    # val2 = valvec[2];
-    # val2v = @view(val2[orderx]);
-    #FastGroupBy.contiguousby(fn, byby, (valv, val2v))
+using SortingAlgorithms
 
-    # multi-threaded
-    res = Vector(length(fn) + 1)
-    @threads for j=1:length(valvec)
-        vi = valvec[j]
-        @inbounds viv = @view(vi[orderx])
-        @inbounds res1 = FastGroupBy._contiguousby_vec(fn[j], byby, viv)
-        res[j+1] = res1[2]
-        if j == 1
-            res[1] = res1[1]
+# assumes x is sorted, count the number of uniques
+function _ndistinct_sorted(f, x)
+    lastx = f(x[1])
+    cnt = 1
+    @inbounds for i = 2:length(x)
+        newx = f(x[i])
+        if newx != lastx
+            cnt += 1
+            lastx = newx
         end
+    end
+    return cnt
+end
+
+# multiple one parameter function for one factors
+# one byvec
+function fastby(fns::Vector{Function}, byvec::Vector{T}, valvec::Tuple) where T
+    l = length(byvec)
+    abc = collect(zip(byvec,valvec...))
+    sort!(abc, by=x->x[1], alg=RadixSort)
+    
+    lfns = length(fns)
+    ucnt = _ndistinct_sorted(x->x[1], abc)
+
+    # TODO: return a RLE that is easy to traverse and PARALLELIZE
+    lastby::T = abc[1][1]
+    # res = tuple(Vector{typeof(sum(b[1:1]))}(ucnt), Vector{typeof(mean(c[1:1]))}(ucnt))
+    res = ((Vector{typeof(fns[i](valvec[i][1:1]))}(ucnt) for i=1:length(fns))...)
+    u_encountered = 1
+    starti = 1
+    @inbounds for i in 2:l
+        newby::T = abc[i][1]
+        if newby != lastby
+            for k = 1:lfns
+                res[k][u_encountered] = fns[k]([abc[j][2] for j=starti:i-1])
+            end
+            u_encountered += 1
+            starti = i
+            lastby = newby
+        end
+    end
+    for k = 1:lfns
+        res[k][end] = fns[k]([abc[j][2] for j=starti:l])
     end
     res
 end
+
+# function fastby(fn::Vector{Function}, byvec::AbstractVector{T}, valvec::Tuple) where T <: Integer
+#     ab = SortingLab.fsortandperm(byvec)
+#     orderx = [b.first for b in ab]
+#     # TODO: fix up the output
+#     byby = [ab1.second for ab1 in ab]
+
+#     # single threaded
+#     # val = valvec[1];
+#     # valv = @view(val[orderx]);
+#     # val2 = valvec[2];
+#     # val2v = @view(val2[orderx]);
+#     #FastGroupBy.contiguousby(fn, byby, (valv, val2v))
+
+#     # multi-threaded
+#     res = Vector(length(fn) + 1)
+#     @threads for j=1:length(valvec)
+#         vi = valvec[j]
+#         @inbounds viv = @view(vi[orderx])
+#         @inbounds res1 = FastGroupBy._contiguousby_vec(fn[j], byby, viv)
+#         res[j+1] = res1[2]
+#         if j == 1
+#             res[1] = res1[1]
+#         end
+#     end
+#     res
+# end
 
 
 function fastby!(fn::Function, 
