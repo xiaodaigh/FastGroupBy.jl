@@ -39,12 +39,12 @@ function fgroupreduce(fn, byveccv::Tuple{T, S}, val::Vector{Z}) where {T<:Catego
 end
 
 # group reduce for single categorical
-function fgroupreduce(fn, byveccv::CategoricalVector, val::Vector{Z}) where Z
+function fgroupreduce(fn, byveccv::CategoricalVector, val::Vector{Z}, v0::T = fn(val[1], val[1])) where {Z,T}
     l1 = length(byveccv.pool)
     lv = length(val)
 
     # make a histogram of unique values
-    res = zeros(Z, l1);
+    res = zeros(T, l1);
     taken = BitArray(l1)
     taken .= false
     @inbounds for i = 1:lv
@@ -56,7 +56,7 @@ function fgroupreduce(fn, byveccv::CategoricalVector, val::Vector{Z}) where Z
     num_distinct = sum(taken)
 
     outbyveccv = copy(@view(byveccv[1:num_distinct]))
-    outval = Vector{Z}(num_distinct)
+    outval = Vector{T}(num_distinct)
 
     distinct_encountered = 1
     @inbounds for i=1:l1
