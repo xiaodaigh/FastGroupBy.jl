@@ -115,11 +115,11 @@ function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) w
     grouptwo!(byveccv[lb], index)
     @inbounds val .= val[index]
     
-    @inbounds for i = lb-1:-1:1
+    @time @inbounds for i = lb-1:-1:1
         byveccv[i] .= byveccv[i][index]
     end
 
-    @inbounds for i = lb-1:-1:1
+    @time @inbounds for i = lb-1:-1:1
         index .= collect(1:l)
         grouptwo!(byveccv[i], index)
         for j = lb:-1:i+1
@@ -151,11 +151,11 @@ function fgroupreduce2!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) 
     grouptwo!(byveccv[lb], index)
     @inbounds val .= val[index]
     
-    @time @inbounds for i = lb-1:-1:1
+    @inbounds for i = lb-1:-1:1
         byveccv[i] .= byveccv[i][index]
     end
 
-    @time @inbounds for i = lb-1:-1:1
+    @inbounds for i = lb-1:-1:1
         index .= collect(1:l)
         grouptwo!(byveccv[i], index)
         for j = lb:-1:i+1
