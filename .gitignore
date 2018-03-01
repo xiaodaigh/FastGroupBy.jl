@@ -25,3 +25,5 @@ strqsort\.dll
 *.dll
 
 *.png
+
+*.jld
