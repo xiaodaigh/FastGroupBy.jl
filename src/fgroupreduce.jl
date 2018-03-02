@@ -39,10 +39,7 @@
 ###########################
 # 3 or more group-by byvec
 ###########################
-function da3(vec, l = length(vec))
-    difftoprev = BitArray{1}(l)
-    difftoprev .= false
-    difftoprev[1] = true
+function diffif!(difftoprev, vec, l = length(vec))
     lastvec = vec[1]
     @inbounds for i=2:l
         thisvec = vec[i]
@@ -54,59 +51,16 @@ function da3(vec, l = length(vec))
     difftoprev
 end
 
-function da(byveccv)
+function diffif(byveccv)
     l = length(byveccv[1])
     diff2prev = BitArray{1}(l)
     diff2prev .= false
     diff2prev[1] = true
     @inbounds for i in 1:length(byveccv)
-        diff2prev .= diff2prev .| da3(byveccv[i], l)
+        diffif!(diff2prev, byveccv[i], l)
     end
     diff2prev
 end
-
-
-
-if false
-    sort!(df, cols=[:id1,:id2])
-    byveccv = (categorical(df[:id1]).refs, categorical(df[:id2]).refs) .|> copy
-
-    hehe = DataFrame(deepcopy(collect(byveccv)))
-    sort!(hehe, cols=[:x1,:x2])
-
-    @time a1 = da1(byveccv[1]);
-    @time a2 = da2(byveccv[1]);
-    @time a3 = da3(byveccv[1]);
-
-    @code_warntype da3(byveccv[2])
-
-    @code_warntype da(byveccv)
-
-    all(a1 .== a2)
-    all(a1 .== a3)
-    @time da(byveccv) |> sum
-    @code_warntype da(byveccv)
-
-    fn = +
-    val = df[:v1]
-    T = Int
-    v0 = 0
-
-    @time FastGroupBy.fgroupreduce!(+, byveccv, val, 0)
-    @time FastGroupBy.fgroupreduce2!(+, byveccv, val, 0)
-
-    @time aggregate(df[[:id1,:id2, :v1]], [:id1,:id2], sum)
-
-    @code_warntype fgroupreduce!(+, byveccv, val, 0)
-
-    @time fgroupreduce(+, byveccv, val, 0)
-
-    @time index = fsortperm(byveccv[2])
-
-    @time v2 = byveccv[1][index]
-    @time index = fsortperm(v2)
-end
-
 
 function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
     l = length(val)
@@ -128,7 +82,7 @@ function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) w
         val .= val[index]
     end
 
-    diff2prev = da(byveccv)
+    diff2prev = diffif(byveccv)
     n_uniques = sum(diff2prev)
 
     upto::UInt = 0
@@ -164,7 +118,7 @@ function fgroupreduce2!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) 
         val .= val[index]
     end
 
-    diff2prev = da(byveccv)
+    diff2prev = diffif(byveccv)
     n_uniques = sum(diff2prev)
 
     upto::UInt = 0
@@ -180,8 +134,65 @@ function fgroupreduce2!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) 
     (resby..., res)
 end
 
+function fgroupreduce(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
+    fgroupreduce!(fn, ((copy(bv) for bv in byveccv)...), copy(val), v0)
+end
 
+
+if false
+    sort!(df, cols=[:id1,:id2])
+    byveccv = (categorical(df[:id1]).refs, categorical(df[:id2]).refs) .|> copy
+
+    hehe = DataFrame(deepcopy(collect(byveccv)))
+    sort!(hehe, cols=[:x1,:x2])
+
+    @time a1 = da1(byveccv[1]);
+    @time a2 = da2(byveccv[1]);
+    @time a3 = da3(byveccv[1]);
+
+    @code_warntype da3(byveccv[2])
+
+    @code_warntype da(byveccv)
+
+    all(a1 .== a2)
+    all(a1 .== a3)
+    @time da(byveccv) |> sum
+    @code_warntype da(byveccv)
+
+    fn = +
+    val = df[:v1]
+    T = Int
+    v0 = 0
+
+    byveccv = (rand(1:100,10_000_000), rand(1:100, 10_000_000))
+    val = rand(1:5,10_000_000)
+
+    df[:id10] = 
+
+    byveccv1 = (categorical(df[:id1]).refs, categorical(df[:id2]).refs, rand(1:100, 10_000_000)) .|> copy
+
+    @time FastGroupBy.fgroupreduce!(+, byveccv1, val, 0)
+
+    @time FastGroupBy.fgroupreduce(+, byveccv, val, 0)
+
+    @time FastGroupBy.fgroupreduce!(+, byveccv, val, 0)
+    @time FastGroupBy.fgroupreduce2!(+, byveccv, val, 0)
+
+    @time aggregate(df[[:id1, :id2, :v1]], [:id1,:id2], sum)
+
+    @code_warntype fgroupreduce!(+, byveccv, val, 0)
+
+    @time fgroupreduce(+, byveccv, val, 0)
+
+    @time index = fsortperm(byveccv[2])
+
+    @time v2 = byveccv[1][index]
+    @time index = fsortperm(v2)
+end
+
+#############################################
 # tuple of CategoricalArray fgroupreduce
+#############################################
 function fgroupreduce(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector{Z}, v0::T = (fn(val[1], val[1]))) where {F<:Function, Z, T}
     bv1 = byveccv[1]
     bv2 = byveccv[2]
@@ -220,7 +231,9 @@ function fgroupreduce(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector{
     (outbv1, outbv2, outval)
 end
 
+########################################
 # group reduce for single categorical
+########################################
 function fgroupreduce(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T = fn(val[1], val[1])) where {F<:Function, Z,T}
     l1 = length(byveccv.pool)
     lv = length(val)
