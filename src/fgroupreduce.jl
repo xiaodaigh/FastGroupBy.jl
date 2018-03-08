@@ -1,41 +1,3 @@
-# tuple of CategoricalArray fgroupreduce
-# function fgroupreduce(fn::F, byveccv::NTuple{N, CategoricalVector}, val::Vector{Z}) where {Z, N, F<:Function}
-#     lcv = (x->x.pool |> length).(byveccv)
-#     lv = length(val)
-#     # make a histogram of unique values
-#     res = zeros(fn(val[1], val[1]) |> typeof, lcv...);
-#     taken = BitArray{N}(lcv...)
-#     taken .= false
-#     @time @inbounds for i = 1:lv
-#         idx = (byveccv[j].refs[i] for j=1:N)
-#         res[idx...] = fn(res[idx...], val[i])
-#         taken[idx...] = true
-#     end
-
-#     num_distinct = sum(taken)
-#     println(num_distinct)
-
-#     # outbv1 = copy(@view(bv1[1:num_distinct]))
-#     # outbv2 = copy(@view(bv2[1:num_distinct]))
-#     # outval = Vector{Z}(num_distinct)
-
-#     outres = ((copy(@view(bv[1:num_distinct])) for bv in byveccv)...)
-#     outval = Vector{fn(val[1], val[1]) |> typeof}(num_distinct)
-#     distinct_encountered = 1
-
-#     @time @inbounds for ijk in zip((1:to for to in size(res))...)
-#         if taken[ijk...]
-#             for i in 1:length(ijk)
-#                 outres[i].refs[distinct_encountered] = ijk[i]
-#             end
-#             outval[distinct_encountered] = res[ijk...]
-#             distinct_encountered += 1
-#         end
-#     end
-
-#     (outres..., outval)
-# end
-
 ###########################
 # Helper functions for 3 or more group-by byvec
 ###########################
@@ -64,8 +26,9 @@ end
 
 #############################################
 # Arbitrary tuple of fgroupreduce
+# as long as grouptwo! is defined for byveccv then it's fine
 #############################################
-function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
+function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
     l = length(val)
     index = collect(1:l)
     lb = length(byveccv)
@@ -101,7 +64,7 @@ function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) w
     (resby..., res)
 end
 
-function fgroupreduce(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
+function fgroupreduce(fn::F, byveccv::Tuple, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
     fgroupreduce!(fn, ((copy(bv) for bv in byveccv)...), copy(val), v0)
 end
 
@@ -143,9 +106,14 @@ if false
 end
 
 #############################################
+# arbitray single 
+#############################################
+fgroupreduce!(fn, byvec::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, (byvec,), val, v0)
+
+#############################################
 # 2 tuple of CategoricalArray fgroupreduce
 #############################################
-function fgroupreduce(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector{Z}, v0::T = (fn(val[1], val[1]))) where {F<:Function, Z, T}
+function fgroupreduce!(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector{Z}, v0::T = (fn(val[1], val[1]))) where {F<:Function, Z, T}
     bv1 = byveccv[1]
     bv2 = byveccv[2]
     l1 = length(bv1.pool)
@@ -186,12 +154,12 @@ end
 ########################################
 # group reduce for single categorical
 ########################################
-function fgroupreduce(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T = fn(val[1], val[1])) where {F<:Function, Z,T}
+function fgroupreduce!(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T = zero(Z)) where {F<:Function, Z,T}
     l1 = length(byveccv.pool)
     lv = length(val)
 
     # make a histogram of unique values
-    res = zeros(T, l1);
+    res = fill(v0, l1)
     taken = BitArray(l1)
     taken .= false
     @inbounds for i = 1:lv
@@ -217,15 +185,32 @@ function fgroupreduce(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T =
     (outbyveccv, outval)
 end
 
-fgroupreduce!(fn, byveccv, val) = fgroupreduce(fn, byveccv, val)
+fgroupreduce(fn, byveccv::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, copy(byveccv), copy(val), v0)
 
+fgroupreduce(fn, df::DataFrame, byveccv::Symbol, val::Symbol, v0 = zero(eltype(df[val]))) = fgroupreduce(fn, df[byveccv], df[val], v0)
+
+
+########################################
 # fgroupreduce for DataFrames
-fgroupreduce(fn, df, bysyms::Tuple{Symbol, Symbol}, val::Symbol) = DataFrame([fgroupreduce(fn, (df[bysyms[1]], df[bysyms[2]]), df[val])...], [bysyms..., val])
+########################################
+
+# only one group by symbol
+fgroupreduce(fn, df::AbstractDataFrame, byveccv::Symbol, val::Symbol, v0 = zero(eltype(df[val]))) = fgroupreduce(fn, df[byveccv], df[val], v0)
+
+# only one group by symbol
+fgroupreduce(fn, df::AbstractDataFrame, bysyms::NTuple{N, Symbol}, val::Symbol) where N = 
+DataFrame(
+    fgroupreduce(
+        fn,
+        ((df[bs] for bs in bysyms)...), 
+        df[val]
+    ) |> collect
+, [bysyms..., val])
 
 if false
     a = "id".*dec.(1:100, 3);
-    ar = rand(a, 100_000_000);
-    val = rand(100_000_000);
+    ar = rand(a, 10_000_00);
+    val = rand(10_000_00);
     using FastGroupBy
     @time fastby(sum, ar, val);
 
@@ -234,5 +219,8 @@ if false
     @time fgroupreduce(+, accv, val)
 
     using FastGroupBy
-    @time fastby(a, val)
+    @time fastby(sum, a, val)
+
+
+    fgroupreduce(sum, df, :)
 end

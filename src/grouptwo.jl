@@ -114,6 +114,15 @@ function grouptwo!(byvec::AbstractVector{String}, valvec)
     return sv
 end
 
+################################################################################
+# TODO: grouptwo! for categorical types
+################################################################################
+
+
+################################################################################
+# grouptwo! for arbitrary types
+# TODO: use the fast fsortperm for known types
+################################################################################
 function grouptwo!(byvec, valvec)
     new_idx = sortperm(byvec)
 
@@ -126,7 +135,9 @@ function grouptwo!(byvec, valvec)
     (byvec, valvec)
 end
 
-
+################################################################################
+# Defined a structure to allow easier reordering
+################################################################################
 struct ValIndexVector{T,S}
     svec::Vector{T}
     index::Vector{S}

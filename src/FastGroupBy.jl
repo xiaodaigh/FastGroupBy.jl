@@ -16,6 +16,7 @@ import IndexedTables: NDSparse, column
 import PooledArrays.PooledArray
 import CategoricalArrays.CategoricalArray
 import StatsBase: BaseRadixSortSafeTypes, radixsort_safe
+import SortingLab: fsort
 
 
 ##############################################################################
@@ -27,9 +28,7 @@ import StatsBase: BaseRadixSortSafeTypes, radixsort_safe
 export fastby!, column, sumby, sumby!, load_bits, fastby, sort!
 export sumby_contiguous, sumby_dict, sumby_radixgroup!, isgrouped
 export sumby_radixsort!, sumby_sortperm, sumby
-export sumby_multi_rs, sorttwo!, fcollect, grouptwo!, fgroupreduce, fgroupreduce!
-export fby, fby!
-
+export sumby_multi_rs, fcollect, grouptwo!, fgroupreduce, fgroupreduce!
 
 ##############################################################################
 ##
@@ -43,8 +42,12 @@ export fby, fby!
 ## Load files
 ##
 ##############################################################################
+
+# TODO: deprecate all the sumby
 include("sumby.jl")
 include("sumby_multithreaded.jl")
+
+
 include("util.jl")
 include("grouptwo.jl")
 include("fastby.jl")
@@ -55,6 +58,5 @@ include("fastby_categoricalarrays_integer.jl")
 include("bits_loaders.jl")
 include("fgroupreduce.jl")
 include("contiguousby.jl")
-include("fby_CategoricalVector_multi.jl")
 
 end # module FastGroupBy
