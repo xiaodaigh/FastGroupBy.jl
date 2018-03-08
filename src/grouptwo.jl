@@ -114,6 +114,18 @@ function grouptwo!(byvec::AbstractVector{String}, valvec)
     return sv
 end
 
+function grouptwo!(byvec, valvec)
+    new_idx = sortperm(byvec)
+
+    newbyvec = byvec[new_idx]
+    newvalvec = valvec[new_idx]
+
+    byvec .= newbyvec
+    valvec .= newvalvec
+
+    (byvec, valvec)
+end
+
 
 struct ValIndexVector{T,S}
     svec::Vector{T}

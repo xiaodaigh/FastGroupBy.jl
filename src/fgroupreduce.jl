@@ -37,7 +37,7 @@
 # end
 
 ###########################
-# 3 or more group-by byvec
+# Helper functions for 3 or more group-by byvec
 ###########################
 function diffif!(difftoprev, vec, l = length(vec))
     lastvec = vec[1]
@@ -62,6 +62,9 @@ function diffif(byveccv)
     diff2prev
 end
 
+#############################################
+# Arbitrary tuple of fgroupreduce
+#############################################
 function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
     l = length(val)
     index = collect(1:l)
@@ -98,66 +101,15 @@ function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) w
     (resby..., res)
 end
 
-function fgroupreduce2!(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
-    l = length(val)
-    index = collect(1:l)
-    lb = length(byveccv)
-    grouptwo!(byveccv[lb], index)
-    @inbounds val .= val[index]
-    
-    @inbounds for i = lb-1:-1:1
-        byveccv[i] .= byveccv[i][index]
-    end
-
-    @inbounds for i = lb-1:-1:1
-        index .= collect(1:l)
-        grouptwo!(byveccv[i], index)
-        for j = lb:-1:i+1
-            byveccv[j] .= byveccv[j][index]
-        end
-        val .= val[index]
-    end
-
-    diff2prev = diffif(byveccv)
-    n_uniques = sum(diff2prev)
-
-    upto::UInt = 0
-    res = fill(v0, n_uniques)
-
-    res[1] = v0
-    resby = ((bv[diff2prev] for bv in byveccv)...)
-    @inbounds for (vali, dp) in zip(val, diff2prev)
-        # increase upto by 1 if it's different to previous value
-        upto += UInt(dp)
-        res[upto] = fn(res[upto], vali)
-    end
-    (resby..., res)
-end
-
 function fgroupreduce(fn::F, byveccv::Tuple, val::Vector{Z}, v0::T = zero(T)) where {F<:Function, Z, T}
     fgroupreduce!(fn, ((copy(bv) for bv in byveccv)...), copy(val), v0)
 end
 
-
 if false
-    sort!(df, cols=[:id1,:id2])
     byveccv = (categorical(df[:id1]).refs, categorical(df[:id2]).refs) .|> copy
 
     hehe = DataFrame(deepcopy(collect(byveccv)))
     sort!(hehe, cols=[:x1,:x2])
-
-    @time a1 = da1(byveccv[1]);
-    @time a2 = da2(byveccv[1]);
-    @time a3 = da3(byveccv[1]);
-
-    @code_warntype da3(byveccv[2])
-
-    @code_warntype da(byveccv)
-
-    all(a1 .== a2)
-    all(a1 .== a3)
-    @time da(byveccv) |> sum
-    @code_warntype da(byveccv)
 
     fn = +
     val = df[:v1]
@@ -191,7 +143,7 @@ if false
 end
 
 #############################################
-# tuple of CategoricalArray fgroupreduce
+# 2 tuple of CategoricalArray fgroupreduce
 #############################################
 function fgroupreduce(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector{Z}, v0::T = (fn(val[1], val[1]))) where {F<:Function, Z, T}
     bv1 = byveccv[1]
