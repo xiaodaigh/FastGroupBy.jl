@@ -8,8 +8,6 @@ function fastby(fns::NTuple{N, Function}, byvec::CategoricalVector, valvec::Tupl
 end
 
 # function fastby2(fns::NTuple{N, Function}, byvec::CategoricalVector, valvec::Tuple) where N
-#     # TODO generalize for categorical
-#     # TODO can just copy the code from fastby
 #     res = fastby2(fns, byvec.refs, valvec)
 #     (byvec.pool.index, res...)
 # end
@@ -154,78 +152,65 @@ function fastby(fn::NTuple{N, Function}, byvec::Vector{T}, valvec::NTuple{N, Vec
     res
 end
 
-
 function fastby!(fn::Function, 
     byvec::Union{PooledArray{pooltype, indextype}, CategoricalVector{pooltype, indextype}},
     # byvec::CategoricalVector{pooltype, indextype}, 
-    valvec::AbstractVector{S}, 
-    outType::Type{W}= valvec[1:1] |> fn |> typeof) where {S, pooltype, indextype, W}
+    valvec::AbstractVector{S}
+    ) where {S, pooltype, indextype}
     l = length(byvec.pool)
    
+    W = valvec[1:1] |> fn |> typeof
+
     # count the number of occurences of each ref
-    res = Dict{pooltype, W}()
-    if fn == Base.sum
-        resvec = zeros(W, l)
-        @inbounds for (r,v) in zip(byvec.refs, valvec)
-            resvec[r] += v
-        end
-        @inbounds for (i,c) in enumerate(resvec)
-            res[byvec.pool[i]] = c
-        end
-        # res = Dict{pooltype, W}(byvec.pool[i] => resvec[i] for i in 1:l)
-    else
-        counter = zeros(UInt, l)
-        for r1 in byvec.refs
-            @inbounds counter[r1] += 1
-        end
-        
-        lbyvec = length(byvec)
-        r1 = byvec.refs[lbyvec]
+    # this is the histogram in counting sort
+    counter = zeros(UInt, l)
+    for r1 in byvec.refs
+        @inbounds counter[r1] += 1
+    end
 
-        # check for degenerate case
-        if counter[r1] == lbyvec
-            return Dict(byvec[1] => fn(valvec))
-        end
+    # number of unique groups in the result
+    ngrps = sum(counter .!= zero(UInt))
+    
+    lbyvec = length(byvec)
+    r1 = byvec.refs[lbyvec]
 
-        uzero = zero(UInt)
-        nonzeropos = fcollect(l)[counter .!= uzero]
+    # check for degenerate case where there is only set of values
+    if counter[r1] == lbyvec
+        return ([byvec[1]], [fn(valvec)])
+    end
 
-        counter = cumsum(counter)
-        rangelo = vcat(0, counter[1:end-1]) .+ 1
-        rangehi = copy(counter)
+    uzero = zero(UInt)
+    nonzeropos = fcollect(l)[counter .!= uzero]
 
-        simvalvec = similar(valvec)
+    counter = cumsum(counter)
+    rangelo = vcat(0, counter[1:end-1]) .+ 1
+    rangehi = copy(counter)
 
+    simvalvec = similar(valvec)
+
+    ci = counter[r1]
+    simvalvec[ci] = valvec[lbyvec]
+    counter[r1] -= 1
+
+    @inbounds for i = lbyvec-1:-1:1
+        r1 = byvec.refs[i]
         ci = counter[r1]
-        simvalvec[ci] = valvec[lbyvec]
+        simvalvec[ci] = valvec[i]
         counter[r1] -= 1
-
-        @inbounds for i = lbyvec-1:-1:1
-            r1 = byvec.refs[i]
-            ci = counter[r1]
-            simvalvec[ci] = valvec[i]
-            counter[r1] -= 1
-        end
-
-        for nzpos in nonzeropos
-            (po, lo, hi) = (byvec.pool[nzpos], rangelo[nzpos], rangehi[nzpos])
-            res[po] = fn(simvalvec[lo:hi])
-        end
     end
 
-    return res
-end
+    # the result group
+    resgrp = copy(@view(byvec[1:ngrps]))
 
-function cate_sum_by(byvec::Union{PooledArray{pooltype, indextype}, CategoricalArray{pooltype, indextype}}, valvec::AbstractVector{S}, outType::Type{W} = valvec[1:1] |> sum |> typeof) where {S, pooltype, indextype, W}
-    l = length(byvec.pool)
-    # count the number of occurences of each ref
-    res = Dict{pooltype, W}()
-    resvec = zeros(S, l)
-    @inbounds for (r,v) in zip(byvec.refs, valvec)
-        resvec[r] += v
+    tmpval = fn(valvec)
+    resval = fill(tmpval, ngrps)
+    i = 1
+    for nzpos in nonzeropos
+        resgrp.refs[i] = byvec.refs[nzpos]
+        (lo, hi) = (rangelo[nzpos], rangehi[nzpos])
+        resval[i] = fn(simvalvec[lo:hi])
+        i += 1
     end
-    for (i,c) in enumerate(resvec)
-        res[byvec.pool[i]] = c
-    end
-    res
+    
+    return (resgrp, resval)
 end

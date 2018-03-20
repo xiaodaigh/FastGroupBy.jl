@@ -6,7 +6,7 @@ function diffif!(difftoprev, vec, l = length(vec))
     @inbounds for i=2:l
         thisvec = vec[i]
         if lastvec != thisvec
-            difftoprev[i-1] = true
+            difftoprev[i] = true
             lastvec = thisvec
         end
     end
@@ -25,7 +25,9 @@ function diffif(byveccv)
 end
 
 #############################################
-# Arbitrary tuple of fgroupreduce
+# Multiple groups tuple of fgroupreduce
+# Single fn
+# Single val
 # as long as grouptwo! is defined for byveccv then it's fine
 #############################################
 function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
@@ -34,7 +36,7 @@ function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0 = zero(Z)) wher
     lb = length(byveccv)
     grouptwo!(byveccv[lb], index)
     @inbounds val .= val[index]
-    
+
     @time @inbounds for i = lb-1:-1:1
         byveccv[i] .= byveccv[i][index]
     end
@@ -82,7 +84,7 @@ if false
     byveccv = (rand(1:100,10_000_000), rand(1:100, 10_000_000))
     val = rand(1:5,10_000_000)
 
-    df[:id10] = 
+    df[:id10] =
 
     byveccv1 = (categorical(df[:id1]).refs, categorical(df[:id2]).refs, rand(1:100, 10_000_000)) .|> copy
 
@@ -106,7 +108,70 @@ if false
 end
 
 #############################################
-# arbitray single 
+# Multiple groups tuple of fgroupreduce
+# Multiple fn
+# Multiple val
+# as long as grouptwo! is defined for byveccv then it's fine
+# TODO: finish this
+#############################################
+function fgroupreduce!(fn::NTuple{M, Function}, byveccv::NTuple{N, AbstractVector}, val::NTuple{M, AbstractVector} , v0 = ((zero(eltype(vt)) for vt in val)...)) where {N, M}
+    lenval = length(val[1])
+    index = collect(1:lenval)
+    grouptwo!(byveccv[N], index)
+
+    # reorders the value vectors
+    @time for i = 1:M
+        @inbounds val[i] .= val[i][index]
+    end
+
+    @time for i = N-1:-1:1
+        @inbounds byveccv[i] .= byveccv[i][index]
+    end
+
+    @time @inbounds for i = N-1:-1:1
+        index .= collect(1:lenval)
+        grouptwo!(byveccv[i], index)
+        for j = N:-1:i+1
+            byveccv[j] .= byveccv[j][index]
+        end
+        for j = 1:M
+            val[j] .= val[j][index]
+        end
+    end
+
+    # diff2prev = diffif(byveccv)
+    # n_uniques = sum(diff2prev)
+
+    # upto::UInt = 0
+    # res = fill(v0, n_uniques)
+
+    # res[1] = v0
+    # resby = ((bv[diff2prev] for bv in byveccv)...)
+    # @inbounds for (vali, dp) in zip(val, diff2prev)
+    #     # increase upto by 1 if it's different to previous value
+    #     upto += UInt(dp)
+    #     res[upto] = fn(res[upto], vali)
+    # end
+    # (resby..., res)
+end
+
+function fgroupreduce(fn::NTuple{M, Function}, byveccv::NTuple{N, AbstractVector}, val::NTuple{M, AbstractVector}, v0 = ((zero(eltype(vt)) for vt in val)...)) where {M, N}
+    fgroupreduce!(fn, ((copy(bv) for bv in byveccv)...), ((copy(v) for v in val)...), v0)
+end
+
+if false
+    fn = +
+    byveccv = (df[:id1], df[:id2])
+    M = 3
+    N= 2
+    val = (df[:v1], df[:v2], df[:v3])
+
+    @time fgroupreduce((+,+,+), byveccv, val)
+end
+
+#############################################
+# arbitray single
+# reduces to fgroupreduce! for multiple tuples but single value vec
 #############################################
 fgroupreduce!(fn, byvec::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, (byvec,), val, v0)
 
@@ -152,7 +217,7 @@ function fgroupreduce!(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector
 end
 
 ########################################
-# group reduce for single categorical
+# fgroupreduce for single categorical
 ########################################
 function fgroupreduce!(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T = zero(Z)) where {F<:Function, Z,T}
     l1 = length(byveccv.pool)
@@ -187,22 +252,20 @@ end
 
 fgroupreduce(fn, byveccv::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, copy(byveccv), copy(val), v0)
 
-fgroupreduce(fn, df::DataFrame, byveccv::Symbol, val::Symbol, v0 = zero(eltype(df[val]))) = fgroupreduce(fn, df[byveccv], df[val], v0)
-
-
 ########################################
 # fgroupreduce for DataFrames
 ########################################
 
 # only one group by symbol
-fgroupreduce(fn, df::AbstractDataFrame, byveccv::Symbol, val::Symbol, v0 = zero(eltype(df[val]))) = fgroupreduce(fn, df[byveccv], df[val], v0)
+fgroupreduce(fn, df::AbstractDataFrame, byveccv::Symbol, val::Symbol, v0 = zero(eltype(df[val]))) =
+    DataFrame(fgroupreduce(fn, df[byveccv], df[val], v0) |> collect, [byveccv, val])
 
-# only one group by symbol
-fgroupreduce(fn, df::AbstractDataFrame, bysyms::NTuple{N, Symbol}, val::Symbol) where N = 
+# multiple group by symbol
+fgroupreduce(fn, df::AbstractDataFrame, bysyms::NTuple{N, Symbol}, val::Symbol) where N =
 DataFrame(
     fgroupreduce(
         fn,
-        ((df[bs] for bs in bysyms)...), 
+        ((df[bs] for bs in bysyms)...),
         df[val]
     ) |> collect
 , [bysyms..., val])
@@ -215,7 +278,7 @@ if false
     @time fastby(sum, ar, val);
 
     accv = ar |> CategoricalVector
-    
+
     @time fgroupreduce(+, accv, val)
 
     using FastGroupBy

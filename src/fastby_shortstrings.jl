@@ -4,8 +4,7 @@ import FastGroupBy: _fastby!
 function _fastby!(
     fn::Function, 
     byvec::AbstractVector{ShortString{T}}, 
-    valvec::AbstractVector{S}, 
-    ::Type{outType} = fn(valvec[1:1]) |> typeof) where {T, S, outType}
+    valvec::AbstractVector{S}) where {T, S}
 
     # make structure
     bysc = ShortStrings.size_content.(byvec)
@@ -16,7 +15,7 @@ function _fastby!(
     valvecv = valvec[idx]
 
     lastby = byvecv[1]
-    res = Dict{ShortString{T}, outType}()
+    res = Dict{ShortString{T}, eltype(fn(valvec[1:1]))}()
     start = 1
     @inbounds for i = 2:length(byvec)
         newby = byvecv[i]
@@ -28,7 +27,7 @@ function _fastby!(
     end
 
     res[byvecv[end]] = fn(@view(valvecv[start:end]))
-    res
+    (keys(res) |> collect, values(res))
 end
 
 

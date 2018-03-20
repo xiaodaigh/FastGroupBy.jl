@@ -12,27 +12,27 @@ group by for DataFrame API
 fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df, bycol, bycol)
 
 function fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol)
-    dictres = fastby!(fn, copy(column(df, bycol)), copy(column(df, valcol)))
-    DataFrame(bycol = keys(dictres) |> collect, valcol = values(dictres) |> collect)
+    DataFrame(fastby!(fn, copy(column(df, bycol)), copy(column(df, valcol))) |>
+        collect, [bycol, :V1])
+
+    # DataFrame(bycol = keys(dictres) |> collect, valcol = values(dictres) |> collect)
 end
 
 fastby(fn::NTuple{N, Function}, df::AbstractDataFrame, bycol::Symbol, valcol::NTuple{N,Symbol}) where N = 
-    fastby(fn, df[bycol], ((df[vc] for vc in valcol)...)) |> collect |> DataFrame
+    DataFrame(fastby(fn, df[bycol], ((df[vc] for vc in valcol)...)) |> collect, vcat(bycol, valcol...))
 
 function fastby(fn::Function, x::Vector{Bool}, y)
     # TODO: fast path for sum and mean
-    Dict{Bool, typeof(fn(y[1:1]))}(
-        true => fn(@view(y[x])), 
-        false => fn(@view(y[.!x])))
+    ([true, false], [fn(@view(y[x])), fn(@view(y[.!x]))])
 end
 
 function fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T, S}
     length(byvec) == length(valvec) || throw(DimensionMismatch())
     outType = typeof(fn(valvec[1:1]))
     if issorted(byvec)
-        h = _contiguousby(fn, byvec, valvec)::Dict{T,outType}
+        h = _contiguousby_vec(fn, byvec, valvec)
     else
-        h = _fastby!(fn, byvec, valvec)::Dict{T,outType}
+        h = _fastby!(fn, byvec, valvec)
     end
     return h
 end
