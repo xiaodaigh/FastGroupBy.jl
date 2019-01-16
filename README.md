@@ -62,7 +62,8 @@ end;
 
 The `fastby` is fast if group by a vector of `Bool`'s as well
 ```julia
-srand(1);
+using Random
+Random.seed!(1)
 x = rand(Bool, 100_000_000);
 y = rand(100_000_000);
 
@@ -71,49 +72,27 @@ y = rand(100_000_000);
 
 The `fastby` works on `String` type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
 ```julia
+using Random
 const M=10_000_000; const K=100;
-srand(1);
+Random.seed!(1)
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 y = repeat([1], inner=length(svec1));
 @time a = fastby!(sum, svec1, y);
 
+a_dict = Dict(zip(a...))
+
 using StatsBase
 @time b = countmap(svec1, alg = :dict);
-[a[k] ≈ b[k] for k in keys(a)] |> all # true
+a_dict == b #true
 ```
 
 ## `fastby` on `DataFrames`
 One can also apply `fastby` on `DataFrame` by supplying the DataFrame as the second argument and its columns using `Symbol` in the third and fourth argument, being `bycol` and `valcol` respectively. For example
 
-```
+```julia
 df1 = DataFrame(grps = rand(1:100, 1_000_000), val = rand(1_000_000))
 # compute the difference between the number rows in that group and the mean of `val` in that group
 res = fastby(val_grouped -> length(val_grouped) - mean(val_grouped), df1, :grps, :val)
 # convert to dataframe
 resdf = DataFrame(grps = keys(res) |> collect, len_minus_mean_val = values(res) |> collect)
-```
-
-# sumby!
-The `sumby!` is a special case of `fastby!` in fact its results are the the same as `fastby!(sum, etc1, etc2)`. It is slightly faster than `fastby!`. 
-
-```julia
-# install FastGroupBy.jl
-# Pkg.clone("https://github.com/xiaodaigh/FastGroupBy.jl.git")
-Pkg.add("FastGroupBy")
-
-using FastGroupBy
-using DataFrames, IndexedTables, Compat, BenchmarkTools
-import DataFrames.DataFrame
-
-const N = 10_000_000; const K = 100
-
-# `sumby!` is faster than `DataFrame.aggregate`
-srand(1);
-id = rand(1:Int(round(N/K)), N);
-val = rand(round.(rand(K)*100,4), N);
-df = DataFrame(id = id, val = val);
-@time x = DataFrames.aggregate(df, :id, sum); # 3.3 seconds
-@time y = sumby!(df, :id, :val); # 0.4
-xdict = Dict(zip(x[:id],x[:val_sum]))
-length(xdict) == length(y) && [xdict[k] ≈ y[k] for k in keys(xdict)] |> all
 ```

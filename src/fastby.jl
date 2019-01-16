@@ -12,14 +12,13 @@ group by for DataFrame API
 fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df, bycol, bycol)
 
 function fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol)
-    DataFrame(fastby!(fn, copy(column(df, bycol)), copy(column(df, valcol))) |>
-        collect, [bycol, :V1])
-
-    # DataFrame(bycol = keys(dictres) |> collect, valcol = values(dictres) |> collect)
+    res_vec = fastby!(fn, copy(df[bycol]), copy(df[valcol]))
+    DataFrame([res_vec...], [bycol, :V1])
+    #DataFrame([collect(keys(res_dict)), collect(values(res_dict))], [bycol, :V1])
 end
 
-fastby(fn::NTuple{N, Function}, df::AbstractDataFrame, bycol::Symbol, valcol::NTuple{N,Symbol}) where N = 
-    DataFrame(fastby(fn, df[bycol], ((df[vc] for vc in valcol)...)) |> collect, vcat(bycol, valcol...))
+# fastby(fn::NTuple{N, Function}, df::AbstractDataFrame, bycol::Symbol, valcol::NTuple{N,Symbol}) where N =
+#     DataFrame(fastby(fn, df[bycol], ((df[vc] for vc in valcol)...)) |> collect, vcat(bycol, valcol...))
 
 function fastby(fn::Function, x::Vector{Bool}, y)
     # TODO: fast path for sum and mean
@@ -43,7 +42,8 @@ Internal: single-function fastby, one by, one val
 function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
     l = length(byvec)
     grouptwo!(byvec, valvec)
-    return _contiguousby(fn, byvec, valvec)
+    #return _contiguousby(fn, byvec, valvec)
+    return _contiguousby_vec(fn, byvec, valvec)
 end
 
 function fastby(fn::Function, df::DataFrame, byvec::Union{AbstractVector{Symbol}, NTuple{N, Symbol}}, valsymbol::Symbol) where N
@@ -52,7 +52,7 @@ function fastby(fn::Function, df::DataFrame, byvec::Union{AbstractVector{Symbol}
         cdfbv = df[bv][indexes]
         grouptwo!(cdfbv, indexes)
     end
-    
+
     # by now all the groups are done
     dfiv = df[indexes, byvec]
     lo = 1
@@ -63,14 +63,14 @@ function fastby(fn::Function, df::DataFrame, byvec::Union{AbstractVector{Symbol}
     for i in 2:size(dfiv,1)
         if dfiv[i,:] != lastrow
             lastrow[valsymbol] = fn(valvec[lo:i-1])
-            
+
             # df1 = lastrow
             lo = i
             lastrow = dfiv[lo,byvec]
             break
         end
     end
-    
+
     for i in lo:size(dfiv,1)
         if dfiv[i,:] != lastrow
             lastrow[valsymbol] = fn(valvec[lo:i-1])
@@ -89,53 +89,53 @@ end
 """
 Internal multi-function fastby, one by, one val
 """
-function _fastby!(fn::Union{Vector{Function},NTuple{N, Function}}, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {N, T <: BaseRadixSortSafeTypes, S}
-    l = length(byvec)
-    grouptwo!(byvec, valvec)
-    lastby = byvec[1]
-
-    res = Dict{T}()
-
-    j = 1
-
-    for i = 2:l
-        @inbounds byval = byvec[i]
-        if byval != lastby
-            viewvalvec = @view valvec[j:i-1]
-            @inbounds res[lastby] = ((fn1(viewvalvec) for fn1 in fn)...)
-            j = i
-            @inbounds lastby = byvec[i]
-        end
-    end
-
-    viewvalvec = @view valvec[j:l]
-    @inbounds res[byvec[l]] = ((fn1(viewvalvec) for fn1 in fn)...)
-    return res
-end
+# function _fastby!(fn::Union{Vector{Function},NTuple{N, Function}}, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {N, T <: BaseRadixSortSafeTypes, S}
+#     l = length(byvec)
+#     grouptwo!(byvec, valvec)
+#     lastby = byvec[1]
+#
+#     res = Dict{T}()
+#
+#     j = 1
+#
+#     for i = 2:l
+#         @inbounds byval = byvec[i]
+#         if byval != lastby
+#             viewvalvec = @view valvec[j:i-1]
+#             @inbounds res[lastby] = ((fn1(viewvalvec) for fn1 in fn)...)
+#             j = i
+#             @inbounds lastby = byvec[i]
+#         end
+#     end
+#
+#     viewvalvec = @view valvec[j:l]
+#     @inbounds res[byvec[l]] = ((fn1(viewvalvec) for fn1 in fn)...)
+#     return res
+# end
 
 """
 Internal multi-function fastby, 1 categorical by, one val
 """
-function _fastby!(fn::Vector{Function}, byvec::CategoricalVector, valvec::AbstractVector{S}) where {S}
-    l = length(byvec)
-    grouptwo!(byvec, valvec)
-    lastby = byvec[1]
-
-    res = Dict{T}()
-
-    j = 1
-
-    for i = 2:l
-        @inbounds byval = byvec[i]
-        if byval != lastby
-            viewvalvec = @view valvec[j:i-1]
-            @inbounds res[lastby] = ((fn1(viewvalvec) for fn1 in fn)...)
-            j = i
-            @inbounds lastby = byvec[i]
-        end
-    end
-
-    viewvalvec = @view valvec[j:l]
-    @inbounds res[byvec[l]] = ((fn1(viewvalvec) for fn1 in fn)...)
-    return res
-end
+# function _fastby!(fn::Vector{Function}, byvec::CategoricalVector, valvec::AbstractVector{S}) where {S}
+#     l = length(byvec)
+#     grouptwo!(byvec, valvec)
+#     lastby = byvec[1]
+#
+#     res = Dict{T}()
+#
+#     j = 1
+#
+#     for i = 2:l
+#         @inbounds byval = byvec[i]
+#         if byval != lastby
+#             viewvalvec = @view valvec[j:i-1]
+#             @inbounds res[lastby] = ((fn1(viewvalvec) for fn1 in fn)...)
+#             j = i
+#             @inbounds lastby = byvec[i]
+#         end
+#     end
+#
+#     viewvalvec = @view valvec[j:l]
+#     @inbounds res[byvec[l]] = ((fn1(viewvalvec) for fn1 in fn)...)
+#     return res
+# end

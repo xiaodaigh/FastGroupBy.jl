@@ -2,7 +2,7 @@ using Compat
 import Base.Forward
 
 using SortingAlgorithms, Base.Order, Compat, IndexedTables, DataFrames
-import Base: ht_keyindex, rehash!, _setindex!, ht_keyindex2
+import Base: ht_keyindex, rehash!, _setindex!
 import SortingAlgorithms: uint_mapping, RADIX_SIZE, RADIX_MASK
 import DataFrames: DataFrame, AbstractDataFrame
 import IndexedTables: IndexedTable, column

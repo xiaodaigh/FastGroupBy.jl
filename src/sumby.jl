@@ -171,7 +171,7 @@ end
 
 "sumby by sorting the by column using radixsort"
 function sumby_radixsort!(by::AbstractVector{T},  val::AbstractVector{S})::Dict{T,S} where {T, S<:Number}
-  
+
   hi = length(by)
 
   if hi == 0;  return Dict{T,S}();
@@ -301,7 +301,7 @@ function sumby_dict(by::AbstractVector{T}, val::AbstractVector{S})::Dict{T,S} wh
   res = Dict{T, S}()
   # resize the Dict to a larger size
   for (byi, vali) in zip(by, val)
-    index = ht_keyindex2(res, byi)
+    index = ht_keyindex2!(res, byi)
     if index > 0
       @inbounds res.vals[index] += vali
     else

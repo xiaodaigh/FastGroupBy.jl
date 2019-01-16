@@ -33,7 +33,7 @@ end
 #     l = length(byvec)
 #     @time abc = collect(zip(byvec,valvec...))
 #     @time sort!(abc, by=x->x[1], alg=RadixSort)
-    
+
 #     @time ucnt = _ndistinct_sorted(x->x[1], abc)
 
 #     # TODO: return a RLE that is easy to traverse and PARALLELIZE
@@ -65,7 +65,7 @@ end
 
 #     # A number of alternatives are tested
 #     # including sorting sort!(byvec, valvec...)
-#     # also sort!(byvec, collect(1:length(byvec))) takes about the same amount of 
+#     # also sort!(byvec, collect(1:length(byvec))) takes about the same amount of
 #     # time
 #     @time FastGroupBy.grouptwo!(byvec, abc)
 
@@ -95,70 +95,70 @@ end
 #     (res1[1], res...)
 # end
 
-function fastby4(fns::NTuple{N, Function}, byvec::Vector, valvec::NTuple{N, Vector}) where N
-    println("hello")
-    @time abc = collect(zip(valvec...))
-    l = length(byvec)
+# function fastby4(fns::NTuple{N, Function}, byvec::Vector, valvec::NTuple{N, Vector}) where N
+#     println("hello")
+#     @time abc = collect(zip(valvec...))
+#     l = length(byvec)
+#
+#     # A number of alternatives are tested
+#     # including sorting sort!(byvec, valvec...)
+#     # also sort!(byvec, collect(1:length(byvec))) takes about the same amount of
+#     # time
+#     @time FastGroupBy.grouptwo!(byvec, abc)
+#
+#     # TODO: now that it returns a RLE, just PARALLELIZE the summation loop
+#     @time res1 = FastGroupBy._contiguousby_vec(sum, byvec, repeat([1], inner = length(byvec)))
+#     ucnt = length(res1[1])
+#
+#     lastby = byvec[1]
+#     # res = tuple(Vector{typeof(sum(b[1:1]))}(ucnt), Vector{typeof(mean(c[1:1]))}(ucnt))
+#     res = ((Vector{typeof(fn(v[1:1]))}(ucnt) for (fn, v) in zip(fns, valvec))...)
+#     u_encountered = 1
+#     starti = 1
+#     @time @inbounds for i in 2:l
+#         newby = byvec[i]
+#         if newby != lastby
+#             for k = 1:N
+#                 res[k][u_encountered] = fns[k]([abc[j][k] for j=starti:i-1])
+#             end
+#             u_encountered += 1
+#             starti = i
+#             lastby = newby
+#         end
+#     end
+#     for k = 1:N
+#         res[k][end] = fns[k]([abc[j][k] for j=starti:l])
+#     end
+#     (res1[1], res...)
+# end
 
-    # A number of alternatives are tested
-    # including sorting sort!(byvec, valvec...)
-    # also sort!(byvec, collect(1:length(byvec))) takes about the same amount of 
-    # time
-    @time FastGroupBy.grouptwo!(byvec, abc)
+# function fastby(fn::NTuple{N, Function}, byvec::Vector{T}, valvec::NTuple{N, Vector}) where {N, T <: Integer}
+#     ab = SortingLab.fsortandperm(byvec)
+#     orderx = ab[2]
+#     # TODO: make a RLE and parallelize the output
+#     byby = ab[1]
+#
+#     # multi-threaded
+#     res = Vector{Vector}(N+1)
+#     @threads for j=1:length(valvec)
+#         vi = valvec[j]
+#         @inbounds viv = @view(vi[orderx])
+#         @inbounds res1 = FastGroupBy._contiguousby_vec(fn[j], byby, viv)
+#         res[j+1] = res1[2]
+#         if j == 1
+#             res[1] = res1[1]
+#         end
+#     end
+#     res
+# end
 
-    # TODO: now that it returns a RLE, just PARALLELIZE the summation loop
-    @time res1 = FastGroupBy._contiguousby_vec(sum, byvec, repeat([1], inner = length(byvec)))
-    ucnt = length(res1[1])
-
-    lastby = byvec[1]
-    # res = tuple(Vector{typeof(sum(b[1:1]))}(ucnt), Vector{typeof(mean(c[1:1]))}(ucnt))
-    res = ((Vector{typeof(fn(v[1:1]))}(ucnt) for (fn, v) in zip(fns, valvec))...)
-    u_encountered = 1
-    starti = 1
-    @time @inbounds for i in 2:l
-        newby = byvec[i]
-        if newby != lastby
-            for k = 1:N
-                res[k][u_encountered] = fns[k]([abc[j][k] for j=starti:i-1])
-            end
-            u_encountered += 1
-            starti = i
-            lastby = newby
-        end
-    end
-    for k = 1:N
-        res[k][end] = fns[k]([abc[j][k] for j=starti:l])
-    end
-    (res1[1], res...)
-end
-
-function fastby(fn::NTuple{N, Function}, byvec::Vector{T}, valvec::NTuple{N, Vector}) where {N, T <: Integer}
-    ab = SortingLab.fsortandperm(byvec)
-    orderx = ab[2]
-    # TODO: make a RLE and parallelize the output
-    byby = ab[1]
-
-    # multi-threaded
-    res = Vector{Vector}(N+1)
-    @threads for j=1:length(valvec)
-        vi = valvec[j]
-        @inbounds viv = @view(vi[orderx])
-        @inbounds res1 = FastGroupBy._contiguousby_vec(fn[j], byby, viv)
-        res[j+1] = res1[2]
-        if j == 1
-            res[1] = res1[1]
-        end
-    end
-    res
-end
-
-function fastby!(fn::Function, 
+function fastby!(fn::Function,
     byvec::Union{PooledArray{pooltype, indextype}, CategoricalVector{pooltype, indextype}},
-    # byvec::CategoricalVector{pooltype, indextype}, 
+    # byvec::CategoricalVector{pooltype, indextype},
     valvec::AbstractVector{S}
     ) where {S, pooltype, indextype}
     l = length(byvec.pool)
-   
+
     W = valvec[1:1] |> fn |> typeof
 
     # count the number of occurences of each ref
@@ -170,7 +170,7 @@ function fastby!(fn::Function,
 
     # number of unique groups in the result
     ngrps = sum(counter .!= zero(UInt))
-    
+
     lbyvec = length(byvec)
     r1 = byvec.refs[lbyvec]
 
@@ -211,6 +211,6 @@ function fastby!(fn::Function,
         resval[i] = fn(simvalvec[lo:hi])
         i += 1
     end
-    
+
     return (resgrp, resval)
 end

@@ -1,8 +1,8 @@
-function contiguousby(fn::Vector{Function}, byvec::AbstractVector, valvec::Tuple) 
-    # ensure that the number of functions and the number vectors is the same
-    @assert length(fn) == length(valvec)
-    ([FastGroupBy._contiguousby_vec(fn[i], byvec, valvec[i])[2] for i = 1:length(fn)]...)
-end
+# function contiguousby(fn::Vector{Function}, byvec::AbstractVector, valvec::Tuple)
+#     # ensure that the number of functions and the number vectors is the same
+#     @assert length(fn) == length(valvec)
+#     ([FastGroupBy._contiguousby_vec(fn[i], byvec, valvec[i])[2] for i = 1:length(fn)]...)
+# end
 
 """
 Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
@@ -52,8 +52,8 @@ function _contiguousby_vec(fn::Function, byvec::AbstractVector{T}, valvec::Abstr
     end
     n_uniques += 1
 
-    resby = Vector{T}(n_uniques)
-    resout = Vector{outType}(n_uniques)
+    resby = Vector{T}(undef, n_uniques)
+    resout = Vector{outType}(undef, n_uniques)
 
     lastby = byvec[1]
     j = 1

@@ -43,21 +43,22 @@ end
 # a general isgrouped algorithm
 function isgrouped(grps::AbstractVector)
   # find where the change happens
-  a = BitArray(2^(sizeof(UInt32)*8))
-
+  a = BitArray(undef, 2^(sizeof(UInt32)*8))
+  a .= false
+  
   hindex = hash(grps[1])
 
   a[Base.trunc_int(UInt32,hindex) + 1] = true
   a[Base.trunc_int(UInt32,hindex >> 32) + 1] = true
 
   for i = 2:length(grps)
-      if grps[i-1] != grps[i]            
+      if grps[i-1] != grps[i]
           hindex = hash(grps[i])
           hindex1 = Base.trunc_int(UInt32, hindex) + 1
-          hindex2 = Base.trunc_int(UInt32, hindex >> 32) + 1            
-          if a[hindex1] && a[hindex2]                
+          hindex2 = Base.trunc_int(UInt32, hindex >> 32) + 1
+          if a[hindex1] && a[hindex2]
               return false
-          else 
+          else
               a[hindex1] = true
               a[hindex2] = true
           end

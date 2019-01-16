@@ -5,7 +5,7 @@ using FastGroupBy
 using BenchmarkTools
 
 using SortingAlgorithms, Base.Order, Compat, IndexedTables, DataFrames
-import Base: ht_keyindex, rehash!, _setindex!, ht_keyindex2
+import Base: ht_keyindex, rehash!, _setindex!
 import SortingAlgorithms: uint_mapping, RADIX_SIZE, RADIX_MASK
 import DataFrames: DataFrame, AbstractDataFrame
 import IndexedTables: IndexedTable, column
@@ -51,3 +51,4 @@ val = rand(Int32(1):Int32(5), N)
 # a1 = mean([abc() for i = 1:5][2:end])
 # b1 = mean([def() for i = 1:5][2:end])
 # 1 - a1/b1
+2+2

@@ -270,20 +270,20 @@ DataFrame(
     ) |> collect
 , [bysyms..., val])
 
-if false
-    a = "id".*dec.(1:100, 3);
-    ar = rand(a, 10_000_00);
-    val = rand(10_000_00);
-    using FastGroupBy
-    @time fastby(sum, ar, val);
-
-    accv = ar |> CategoricalVector
-
-    @time fgroupreduce(+, accv, val)
-
-    using FastGroupBy
-    @time fastby(sum, a, val)
-
-
-    fgroupreduce(sum, df, :)
-end
+# if false
+#     a = "id".*dec.(1:100, 3);
+#     ar = rand(a, 10_000_00);
+#     val = rand(10_000_00);
+#     using FastGroupBy
+#     @time fastby(sum, ar, val);
+#
+#     accv = ar |> CategoricalVector
+#
+#     @time fgroupreduce(+, accv, val)
+#
+#     using FastGroupBy
+#     @time fastby(sum, a, val)
+#
+#
+#     fgroupreduce(sum, df, :)
+# end

@@ -68,7 +68,7 @@ end
 function shortstring_groupby(byvecss, val)
     x1 = copy(byvecss[1]);
     vi = FastGroupBy.ValIndexVector(val, x1);
-    
+
     x2 = copy(byvecss[2]);
     @time SortingLab.sorttwo!(x2, vi)
     vi
@@ -119,11 +119,7 @@ end
 # using SplitApplyCombine
 #######################################################################
 
-if isdefined(Base, :ht_keyindex2)
-    const ht_keyindex2! = Base.ht_keyindex2
-else
-    using Base: ht_keyindex2!
-end
+import Base: ht_keyindex2!
 
 function sac(fn, byvec, valvec::Vector{T}) where T
     cm = Dict{Tuple{eltype.(byvec)...}, T}()
@@ -137,7 +133,7 @@ function sac(fn, byvec, valvec::Vector{T}) where T
         end
     end
     l = length(cm)
-    
+
     # bvout = Tuple(Vector{eltype(bv)}(l) for bv in byvec)
     # for (i, c) in enumerate(keys(cm))
     #     for j in 1:length(c)
@@ -157,7 +153,7 @@ res = sac(sum, byvec, valvec)
 # @time y = fastby(fn, df, byvec, :val); # 0.4
 # @code_warntype fastby(fn, df, byvec, :val)
 @time x = DataFrames.aggregate(df[1,:], [:id1,:id2], sum); # test
-@benchmark x = DataFrames.aggregate($df, [:id1,:id2], sum) 
+@benchmark x = DataFrames.aggregate($df, [:id1,:id2], sum)
 
 using JuliaDB
 
@@ -289,7 +285,7 @@ end
 
 sortandperm(v) = sortandperm!(copy(v))
 
-@benchmark sortandperm(r) 
+@benchmark sortandperm(r)
 issorted(r)
 
 function sortandperm2!(v::Vector{Int64})
