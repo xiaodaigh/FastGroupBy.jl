@@ -40,8 +40,9 @@ end
 Internal: single-function fastby, one by, one val
 """
 function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
-    l = length(byvec)
-    grouptwo!(byvec, valvec)
+    # l = length(byvec)
+    #grouptwo!(byvec, valvec)    
+    SortingLab.sorttwo!(byvec, valvec)
     #return _contiguousby(fn, byvec, valvec)
     return _contiguousby_vec(fn, byvec, valvec)
 end

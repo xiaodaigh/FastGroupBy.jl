@@ -1,7 +1,7 @@
 import Base: isbits, sizeof, similar
 using SortingAlgorithms
 import SortingAlgorithms: RADIX_SIZE, RADIX_MASK
-import Base: getindex,setindex!, similar
+import Base: getindex, setindex!, similar
 
 function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTypes}
     l = length(vs)
@@ -11,7 +11,7 @@ function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTy
 
     # Init
     # iters = ceil(Integer, sizeof(T)*8/RADIX_SIZE) # takes 2.954
-    
+
     bits_to_sort = sizeof(T)*8 - leading_zeros(T(reduce(|, vs)))
     iters = ceil(Integer, bits_to_sort/RADIX_SIZE)
 
