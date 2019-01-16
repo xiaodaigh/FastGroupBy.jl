@@ -70,7 +70,7 @@ y = rand(100_000_000);
 @time fastby(sum, x, y)
 ```
 
-The `fastby` works on `String` type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is NOT recommended (at this stage).
+The `fastby` works on `String` type as well but is still slower than `countmap` and uses MUCH more RAM and therefore is **NOT recommended (at this stage)**.
 ```julia
 using Random
 const M=10_000_000; const K=100;

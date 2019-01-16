@@ -18,7 +18,7 @@ primitive type  Bits256 256 end
 function Bits192(x)
     # it loads from the end
     z = unsafe_load(Ptr{Bits192}(pointer_from_objref(x)))
-    
+
     if sizeof(Bits192) > sizeof(x)
         lzx = leading_zeros(x)
         shift_n = sizeof(Bits192)*8 - sizeof(eltype(x))*8
@@ -35,7 +35,7 @@ mask16bit(::Type) = 0xffff
 function make_mask(::Type{Bits192})
     x = UInt(2)^(sizeof(UInt)*8) - 1
 
-    yy = unsafe_load(Ptr{Bits192}(pointer_from_objref(x)))    
+    yy = unsafe_load(Ptr{Bits192}(pointer_from_objref(x)))
     for i = 2:3
         y = unsafe_load(Ptr{Bits192}(pointer_from_objref(x)))
         # get rid of zeros in front
@@ -72,7 +72,7 @@ convert(::Type{UInt16}, x::Bits192) = Base.Intrinsics.trunc_int(UInt16, x)
 function Bits256(x)
     # it loads from the end
     z = unsafe_load(Ptr{Bits256}(pointer_from_objref(x)))
-    
+
     if sizeof(Bits256) > sizeof(x)
         lzx = leading_zeros(x)
         shift_n = sizeof(Bits256)*8 - sizeof(eltype(x))*8
@@ -88,7 +88,7 @@ mask16bit(::Type{Bits256}) = u1256_mask
 function make_mask(::Type{Bits256})
     x = UInt(2)^(sizeof(UInt)*8) - 1
 
-    yy = unsafe_load(Ptr{Bits256}(pointer_from_objref(x)))    
+    yy = unsafe_load(Ptr{Bits256}(pointer_from_objref(x)))
     for i = 2:3
         y = unsafe_load(Ptr{Bits256}(pointer_from_objref(x)))
         # get rid of zeros in front

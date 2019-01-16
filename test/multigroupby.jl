@@ -298,7 +298,7 @@ sortandperm2(v) = sortandperm2!(copy(v))
 
 @benchmark sortandperm2($r)
 
-function fsortperm(v)
+function fsortperm8(v)
     @time a = collect(UInt32(1):UInt32(length(v)))
     @time v1 .= (v .<< 32) .| a
     @time SortingLab.sort32!(v1)
@@ -307,11 +307,11 @@ function fsortperm(v)
     @time v1 .& 0xffffffff
 end
 
-@time fsortperm(r);
+@time fsortperm8(r);
 
-@benchmark fsortperm($r)
+@benchmark fsortperm8($r)
 
-a = fsortperm(r)
+a = fsortperm8(r)
 issorted(r[a])
 
 
