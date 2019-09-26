@@ -56,7 +56,7 @@ include("fastby_strings.jl")
 include("fastby_categoricalarrays_integer.jl")
 # include("bits_types.jl")
 include("bits_loaders.jl")
-# include("fgroupreduce.jl")
+include("fgroupreduce.jl")
 include("contiguousby.jl")
 
 end # module FastGroupBy

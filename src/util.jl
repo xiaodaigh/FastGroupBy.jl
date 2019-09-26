@@ -29,7 +29,7 @@ using Base.Threads
 function fcollect(N::Integer, T = Int)
     nt = nthreads()
     n,r = divrem(N,nt)
-    a = Vector{T}(N)
+    a = Vector{T}(undef, N)
     @threads for i=1:nt
         ioff = (i-1)*n
         nn = ifelse(i == nt, n+r, n)
@@ -45,7 +45,7 @@ function isgrouped(grps::AbstractVector)
   # find where the change happens
   a = BitArray(undef, 2^(sizeof(UInt32)*8))
   a .= false
-  
+
   hindex = hash(grps[1])
 
   a[Base.trunc_int(UInt32,hindex) + 1] = true

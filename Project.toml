@@ -1,7 +1,7 @@
 name = "FastGroupBy"
 uuid = "38d20732-18b0-11e9-29b5-d5977e39763d"
 authors = ["Dai ZJ <zhuojia.dai@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
@@ -12,3 +12,12 @@ PooledArrays = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 SortingAlgorithms = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
 SortingLab = "562c1548-17b8-5b69-83cf-d8aebec229f5"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
+[extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[targets]
+test = ["Test", "Revise", "BenchmarkTools", "Random"]

@@ -1,15 +1,15 @@
 #######################################################################
 # setting up
 #######################################################################
-using Revise
-using FastGroupBy, BenchmarkTools, SortingLab, CategoricalArrays, Base.Test
-tic()
+# using Revise
+using FastGroupBy, BenchmarkTools, SortingLab, CategoricalArrays, Test
+using Random
+
 # import Base: getindex, similar, setindex!, size
 N = 100_000_000; K = 100
-srand(1);
-# val = rand(round.(rand(K)*100,4), N);
+Random.seed!(1);
 val = rand(1:5, N);
-pool = "id".*dec.(1:100,3);
+pool = "id".*lpad.(1:100,3, '0');
 fn = sum;
 
 #######################################################################
@@ -22,19 +22,19 @@ y = compress(y);
 z = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pool)), N), CategoricalPool(pool, true));
 z = compress(z);
 byveccv = (y, z);
-toc() # 2mins for 2b length vectors
+ # 2mins for 2b length vectors
 
-tic()
+
 @benchmark fgroupreduce($+, $byveccv, $val) # 7.5 seconds for 2billion
 res1 = fgroupreduce(+, byveccv, val)
-res1max = fgroupreduce(max, byveccv, val) 
-toc()
+res1max = fgroupreduce(max, byveccv, val)
 
-tic()
+
+
 @benchmark fby($sum, $byveccv, $val)
 res = fby(sum, byveccv, val)
 # @code_warntype fby(sum, byveccv, val)
-toc()
+
 
 @test all(res[1] .== res1[1])
 @test all(res[2] .== res1[2])
@@ -141,8 +141,8 @@ if false
     setkey(DT, id1, id2)
     system.time( DT[, sum(v1), keyby="id1,id2"])
     """
-    # user  system elapsed 
-    # 1.24    0.07    1.33 
+    # user  system elapsed
+    # 1.24    0.07    1.33
 
     using Plots
     bar(
