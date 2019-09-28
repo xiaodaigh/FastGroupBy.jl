@@ -34,9 +34,6 @@ g(fmq4) = aggregate(fmq4[:,[:V20,:V5]], :V20, mean)
 @time fastby(mean, fmq4, :V20, :V5);
 
 
-
-
-
 const M=100_000_000; const K=100;
 srand(1);
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
@@ -67,7 +64,7 @@ x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time a = fastby_check_sorted!(sum,x,y);
 
-@code_warntype 
+@code_warntype
 @code_warntype
 
 

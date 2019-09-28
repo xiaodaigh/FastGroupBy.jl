@@ -1,7 +1,7 @@
 # using Revise
 using FastGroupBy, StatsBase, DataFrames, Random
 # using SortingAlgorithms
-import DataFrames.DataFrame
+import DataFrames: DataFrame
 using Test
 using CategoricalArrays, PooledArrays
 
@@ -33,8 +33,6 @@ if false
     b = Dict(1 => 2, 2 => 2, 3 => 6)
     @test aa == b
     @test aaa == b
-
-
 
     # fastby sum
 

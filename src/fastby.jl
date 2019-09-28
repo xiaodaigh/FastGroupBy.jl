@@ -11,7 +11,7 @@ group by for DataFrame API
 """
 fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df, bycol, bycol)
 
-function fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol, valcol::Symbol)
+function fastby(fn::Function, df::DF, bycol::Symbol, valcol::Symbol) where DF <: AbstractDataFrame
     res_vec = fastby!(fn, copy(df[bycol]), copy(df[valcol]))
     DataFrame([res_vec...], [bycol, :V1])
     #DataFrame([collect(keys(res_dict)), collect(values(res_dict))], [bycol, :V1])
@@ -41,7 +41,7 @@ Internal: single-function fastby, one by, one val
 """
 function _fastby!(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S}
     # l = length(byvec)
-    #grouptwo!(byvec, valvec)    
+    #grouptwo!(byvec, valvec)
     SortingLab.sorttwo!(byvec, valvec)
     #return _contiguousby(fn, byvec, valvec)
     return _contiguousby_vec(fn, byvec, valvec)

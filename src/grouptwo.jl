@@ -1,6 +1,6 @@
 import Base: isbits, sizeof, similar
 using SortingAlgorithms
-import SortingAlgorithms: RADIX_SIZE, RADIX_MASK
+import SortingAlgorithms: RADIX_SIZE, RADIX_MASK, uint_mapping
 import Base: getindex, setindex!, similar
 
 function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTypes}
@@ -10,29 +10,43 @@ function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTy
     index1 = similar(index)
 
     # Init
-    # iters = ceil(Integer, sizeof(T)*8/RADIX_SIZE) # takes 2.954
+    iters = ceil(Int, sizeof(T)*8/RADIX_SIZE) # takes 2.954
 
-    bits_to_sort = sizeof(T)*8 - leading_zeros(T(reduce(|, vs)))
-    iters = ceil(Integer, bits_to_sort/RADIX_SIZE)
+    #bits_to_sort = sizeof(T)*8 - leading_zeros(T(reduce(|, vs)))
+    #iters = ceil(Integer, bits_to_sort/RADIX_SIZE)
 
     bin = zeros(UInt32, 2^RADIX_SIZE, iters)
 
     # Histogram for each element, radix
     for i = 1:l
+        # vsum = uint_mapping(Base.Forward, vs[i])
+        vsum = vs[i]
         for j = 1:iters
-            idx = Int((vs[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+            idx = Int((vsum >> ((j-1)*RADIX_SIZE)) & RADIX_MASK) + 1
             @inbounds bin[idx,j] += 1
         end
     end
 
+    # for j = 1:iters
+    #     bin[:, j] .= cumsum(bin[:,j])
+    # end
+    #
+    #return Int.(bin)
+
     # Sort!
     swaps = 0
     for j = 1:iters
+        #global vs, ts, index, index1, swaps
+        # vsum = uint_mapping(Base.Forward, vs[l])
+        vsum = vs[l]
+
         # Unroll first data iteration, check for degenerate case
-        idx = Int((vs[l] >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+        idx = Int((vsum >> ((j-1)*RADIX_SIZE)) & RADIX_MASK) + 1
 
         # are all values the same at this radix?
-        if bin[idx,j] == l;  continue;  end
+        if bin[idx,j] == l
+            continue
+        end
 
         cbin = cumsum(bin[:,j])
         ci = cbin[idx]
@@ -40,9 +54,13 @@ function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTy
         index1[ci] = index[l]
         cbin[idx] -= 1
 
+        #return vs, index, ts, index1
+
         # Finish the loop...
         @inbounds for i in l-1:-1:1
-            idx = Int((vs[i] >> (j-1)*RADIX_SIZE) & RADIX_MASK) + 1
+            # vsum = uint_mapping(Base.Forward, vs[i])
+            vsum = vs[i]
+            idx = Int((vsum >> ((j-1)*RADIX_SIZE)) & RADIX_MASK) + 1
             ci = cbin[idx]
             ts[ci] = vs[i]
             index1[ci] = index[i]

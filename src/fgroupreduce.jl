@@ -1,6 +1,9 @@
 ###########################
 # Helper functions for 3 or more group-by byvec
 ###########################
+
+export diffif, diffif!
+
 function diffif!(difftoprev, vec, l = length(vec))
     lastvec = vec[1]
     @inbounds for i=2:l
@@ -15,7 +18,7 @@ end
 
 function diffif(byveccv)
     l = length(byveccv[1])
-    diff2prev = BitArray{1}(l)
+    diff2prev = BitVector(undef, l)
     diff2prev .= false
     diff2prev[1] = true
     @inbounds for i in 1:length(byveccv)
@@ -30,44 +33,79 @@ end
 # Single val
 # as long as grouptwo! is defined for byveccv then it's fine
 #############################################
-# function fgroupreduce!(fn::F, byveccv::Tuple, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
-#     l = length(val)
-#     index = collect(1:l)
-#     lb = length(byveccv)
-#     grouptwo!(byveccv[lb], index)
-#     @inbounds val .= val[index]
-#
-#     @time @inbounds for i = lb-1:-1:1
-#         byveccv[i] .= byveccv[i][index]
-#     end
-#
-#     @time @inbounds for i = lb-1:-1:1
-#         index .= collect(1:l)
-#         grouptwo!(byveccv[i], index)
-#         for j = lb:-1:i+1
-#             byveccv[j] .= byveccv[j][index]
-#         end
-#         val .= val[index]
-#     end
-#
-#     diff2prev = diffif(byveccv)
-#     n_uniques = sum(diff2prev)
-#
-#     upto::UInt = 0
-#     res = fill(v0, n_uniques)
-#
-#     res[1] = v0
-#     resby = ((bv[diff2prev] for bv in byveccv)...)
-#     @inbounds for (vali, dp) in zip(val, diff2prev)
-#         # increase upto by 1 if it's different to previous value
-#         upto += UInt(dp)
-#         res[upto] = fn(res[upto], vali)
-#     end
-#     (resby..., res)
-# end
+function fgroupreduce!(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
+l = length(val)
+index = collect(1:l)
+lb = length(byveccv)
 
-function fgroupreduce(fn::F, byveccv::Tuple, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
-    fgroupreduce!(fn, ((copy(bv) for bv in byveccv)...), copy(val), v0)
+@time grouptwo!(byveccv[lb], index)
+@inbounds val .= val[index]
+
+# reorganises the other columns
+@time @inbounds for i = lb-1:-1:1
+    byveccv[i] .= byveccv[i][index]
+end
+
+# sort the result of the columns
+@time @inbounds for i = lb-1:-1:1
+    index .= collect(1:l)
+    grouptwo!(byveccv[i], index)
+    for j = lb:-1:i+1
+        byveccv[j] .= byveccv[j][index]
+    end
+    val .= val[index]
+end
+
+@time diff2prev = diffif(byveccv)
+@time n_uniques = sum(diff2prev)
+
+upto = UInt(0)
+res = fill(v0, n_uniques)
+
+res[1] = v0
+resby = (bv[diff2prev] for bv in byveccv)
+
+i = 0
+@time @inbounds for (vali, dp) in zip(val, diff2prev)
+    #increase upto by 1 if it's different to previous value
+    if UInt(dp) == 1
+        i = 0
+    end
+    i += 1
+    upto += UInt(dp)
+    res[upto] = fn(res[upto], vali, i)
+end
+@time (resby..., res)
+end
+
+if false
+fn = +
+x = rand(1:1_000, 100_000_000)
+y = rand(1:1_000, 100_000_000)
+byveccv = (x, y)
+val = copy(x)
+v0 = zero(Int)
+
+@time fgroupreduce((a, b, _) ->  a + b, byveccv, val)
+
+Random.seed!(0)
+z = rand(1:1_000_000, 100_000_000)
+val = copy(z)
+@time fgroupreduce((cum, new, i)-> cum*(i-1)/i + new/i , z, val, 0.0)
+
+@time fgroupreduce((a, b, _) ->  a + b, z, val)
+
+byveccv = (z,)
+
+
+
+fgroupreduce((cum, new, i)-> cum*(i-1)/i + new/i , x, x, 0.0)
+
+end
+
+function fgroupreduce(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
+    println("meh")
+    fgroupreduce!(fn, tuple((copy(bv) for bv in byveccv)...), copy(val), v0)
 end
 #
 # if false
@@ -173,7 +211,7 @@ end
 # arbitray single
 # reduces to fgroupreduce! for multiple tuples but single value vec
 #############################################
-fgroupreduce!(fn, byvec::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, (byvec,), val, v0)
+fgroupreduce!(fn::Function, byvec::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, (byvec,), val, v0)
 
 #############################################
 # 2 tuple of CategoricalArray fgroupreduce
@@ -250,7 +288,10 @@ function fgroupreduce!(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T 
     (outbyveccv, outval)
 end
 
-fgroupreduce(fn, byveccv::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, copy(byveccv), copy(val), v0)
+fgroupreduce(fn::Function, byveccv::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = begin
+    println("meh")
+    fgroupreduce!(fn, copy(byveccv), copy(val), v0)
+end
 
 ########################################
 # fgroupreduce for DataFrames

@@ -1,12 +1,12 @@
 #######################################################################
 # setting up
 #######################################################################
-# using Revise
+using Revise
 using FastGroupBy, BenchmarkTools, SortingLab, CategoricalArrays, Test
 using Random
 
 # import Base: getindex, similar, setindex!, size
-N = 100_000_000; K = 100
+N = 100_000; K = 100
 Random.seed!(1);
 val = rand(1:5, N);
 pool = "id".*lpad.(1:100,3, '0');
@@ -24,10 +24,10 @@ z = compress(z);
 byveccv = (y, z);
  # 2mins for 2b length vectors
 
-
 @benchmark fgroupreduce($+, $byveccv, $val) # 7.5 seconds for 2billion
 res1 = fgroupreduce(+, byveccv, val)
 res1max = fgroupreduce(max, byveccv, val)
+
 
 
 
@@ -51,10 +51,6 @@ fgroupreduce(fn, df, bysyms::Tuple{Symbol, Symbol}, val::Symbol) = DataFrame([fg
 @time a = fgroupreduce(+, df, (:y, :z), :val)
 
 DataFrame([a...])
-
-
-
-
 
 
 if false

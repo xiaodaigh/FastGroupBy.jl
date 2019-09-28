@@ -5,7 +5,7 @@
 # end
 
 """
-Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group by stored contiguously
+Apply by-operation assuming that the vector is grouped i.e. elements that belong to the same group are stored contiguously
 """
 function _contiguousby(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}, ::Type{outType} = typeof(fn(valvec[1:1]))) where {T <: Union{BaseRadixSortSafeTypes, Bool, String}, S, outType}
     l = length(byvec)
