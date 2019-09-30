@@ -2,7 +2,7 @@
 # Helper functions for 3 or more group-by byvec
 ###########################
 
-export diffif, diffif!
+export diffif, diffif!, meanreduce
 
 function diffif!(difftoprev, vec, l = length(vec))
     lastvec = vec[1]
@@ -27,6 +27,11 @@ function diffif(byveccv)
     diff2prev
 end
 
+###########################
+# meanreduce
+###########################
+meanreduce(mean_so_far, new_value, i) = mean_so_far*(i-1)/i + new_value/i
+
 #############################################
 # Multiple groups tuple of fgroupreduce
 # Single fn
@@ -34,80 +39,91 @@ end
 # as long as grouptwo! is defined for byveccv then it's fine
 #############################################
 function fgroupreduce!(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
-l = length(val)
-index = collect(1:l)
-lb = length(byveccv)
+    l = length(val)
+    # index = collect(1:l)
+    lb = length(byveccv)
 
-@time grouptwo!(byveccv[lb], index)
-@inbounds val .= val[index]
+    # # sort the first column and index
+    # @time grouptwo!(byveccv[lb], index)
+    #
+    # # reorganise value
+    # @time @inbounds val .= val[index]
+    #
+    # # reorganises the other columns
+    # @time @inbounds for i = lb-1:-1:1
+    #     byveccv[i] .= byveccv[i][index]
+    # end
 
-# reorganises the other columns
-@time @inbounds for i = lb-1:-1:1
-    byveccv[i] .= byveccv[i][index]
-end
+    c1l = collect(1:l)
 
-# sort the result of the columns
-@time @inbounds for i = lb-1:-1:1
-    index .= collect(1:l)
-    grouptwo!(byveccv[i], index)
-    for j = lb:-1:i+1
-        byveccv[j] .= byveccv[j][index]
+    # sort the result of the columns
+    @time @inbounds for i = lb:-1:2
+        println("sorting $i th column")
+
+        index = copy(c1l)
+
+        grouptwo!(byveccv[i], index)
+        # for j = lb:-1:i+1
+        #     println("    organising $j th column")
+        #     byveccv[j] .= byveccv[j][index]
+        # end
+        for j = i-1:-1:1
+            println("    organising $j th column")
+            byveccv[j] .= byveccv[j][index]
+        end
+        println("    organising value")
+        val .= val[index]
     end
-    val .= val[index]
-end
 
-@time diff2prev = diffif(byveccv)
-@time n_uniques = sum(diff2prev)
+    println("sorting 1st column and organising value")
+    grouptwo!(byveccv[1], val)
 
-upto = UInt(0)
-res = fill(v0, n_uniques)
+    @time diff2prev = diffif(byveccv)
+    n_uniques = sum(diff2prev)
 
-res[1] = v0
-resby = (bv[diff2prev] for bv in byveccv)
+    upto = UInt(0)
+    res = fill(v0, n_uniques)
 
-i = 0
-@time @inbounds for (vali, dp) in zip(val, diff2prev)
-    #increase upto by 1 if it's different to previous value
-    if UInt(dp) == 1
-        i = 0
+    resby = (bv[diff2prev] for bv in byveccv)
+
+    i = 0
+    @time @inbounds for (vali, dp) in zip(val, diff2prev)
+        #increase upto by 1 if it's different to previous value
+        if UInt(dp) == 1
+            i = 0
+        end
+        i += 1
+        upto += UInt(dp)
+        res[upto] = fn(res[upto], vali, i)
     end
-    i += 1
-    upto += UInt(dp)
-    res[upto] = fn(res[upto], vali, i)
+    @time (resby..., res)
 end
-@time (resby..., res)
-end
+
+fgroupreduce(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z} =
+    fgroupreduce!(fn, tuple((copy(bv) for bv in byveccv)...), copy(val), v0)
 
 if false
-fn = +
-x = rand(1:1_000, 100_000_000)
-y = rand(1:1_000, 100_000_000)
-byveccv = (x, y)
-val = copy(x)
-v0 = zero(Int)
+    fn = +
+    x = rand(1:1_000, 100_000_000)
+    y = rand(1:1_000, 100_000_000)
+    byveccv = (x, y)
+    val = copy(x)
+    v0 = zero(Int)
 
-@time fgroupreduce((a, b, _) ->  a + b, byveccv, val)
+     fgroupreduce((a, b, _) ->  a + b, byveccv, val)
 
-Random.seed!(0)
-z = rand(1:1_000_000, 100_000_000)
-val = copy(z)
-@time fgroupreduce((cum, new, i)-> cum*(i-1)/i + new/i , z, val, 0.0)
+    Random.seed!(0)
+    z = rand(1:1_000_000, 100_000_000)
+    val = copy(z)
+     fgroupreduce((cum, new, i)-> cum*(i-1)/i + new/i , z, val, 0.0)
 
-@time fgroupreduce((a, b, _) ->  a + b, z, val)
+     fgroupreduce((a, b, _) ->  a + b, z, val)
 
-byveccv = (z,)
-
-
-
-fgroupreduce((cum, new, i)-> cum*(i-1)/i + new/i , x, x, 0.0)
-
+    byveccv = (z,)
+    fgroupreduce((cum, new, i)-> cum*(i-1)/i + new/i , x, x, 0.0)
 end
 
-function fgroupreduce(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z}
-    println("meh")
-    fgroupreduce!(fn, tuple((copy(bv) for bv in byveccv)...), copy(val), v0)
-end
-#
+
 # if false
 #     byveccv = (categorical(df[:id1]).refs, categorical(df[:id2]).refs) .|> copy
 #

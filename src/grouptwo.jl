@@ -10,10 +10,9 @@ function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTy
     index1 = similar(index)
 
     # Init
-    iters = ceil(Int, sizeof(T)*8/RADIX_SIZE) # takes 2.954
-
-    #bits_to_sort = sizeof(T)*8 - leading_zeros(T(reduce(|, vs)))
-    #iters = ceil(Integer, bits_to_sort/RADIX_SIZE)
+    #iters = ceil(Int, sizeof(T)*8/RADIX_SIZE) # takes 2.954
+    bits_to_sort = sizeof(T)*8 - leading_zeros(T(reduce(|, vs)))
+    iters = ceil(Integer, bits_to_sort/RADIX_SIZE)    
 
     bin = zeros(UInt32, 2^RADIX_SIZE, iters)
 
@@ -26,12 +25,6 @@ function grouptwo!(vs::AbstractVector{T}, index) where {T <: BaseRadixSortSafeTy
             @inbounds bin[idx,j] += 1
         end
     end
-
-    # for j = 1:iters
-    #     bin[:, j] .= cumsum(bin[:,j])
-    # end
-    #
-    #return Int.(bin)
 
     # Sort!
     swaps = 0
