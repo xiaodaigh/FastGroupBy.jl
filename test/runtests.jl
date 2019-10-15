@@ -11,22 +11,26 @@ N=1_000_000; K=100;
 
 # fastby for CategoricalArrays and PooledArrays
 
-if false
-    # TODO
-    pools = unique([randstring(rand(1:32)) for i = 1:N÷K]);
-    byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), N), CategoricalPool(pools, false));
-    valvec = rand(N);
-    @time cmres = countmap(byvec, weights(valvec)); #76
-    @time fnrs = fastby(sum, byvec, valvec); # 24
-    @test length(cmres) == length(fnrs)
-    @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
+# TODO
+pools = unique([randstring(rand(1:32)) for i = 1:N÷K]);
+byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), N), CategoricalPool(pools, false));
+valvec = rand(N);
+@time cmres = countmap(byvec, weights(valvec)); #76
+@time fnrs = fastby(sum, byvec, valvec); # 24
+#fnrsdict =
+zip(fnrs...) |> collect
 
-    byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), N)), pools);
-    @time cmres = countmap(byvec, weights(valvec)); #38
-    @time fnrs = fastby(sum, byvec, valvec); # 21
-    @test length(cmres) == length(fnrs)
-    @test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
-end
+string.(fnrs[1]) |> unique
+
+@test length(cmres) == length(fnrs[1])
+@test all([cmres[k] ≈ fnrsdict[k] for k in keys(cmres)])
+
+byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), N)), pools);
+@time cmres = countmap(byvec, weights(valvec)); #38
+@time fnrs = fastby(sum, byvec, valvec); # 21
+@test length(cmres) == length(fnrs)
+@test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
+
 
 # Basic sumby and fastby!
 a = [1, 1, 2, 3, 3];
@@ -70,16 +74,20 @@ grpsum = fastby(sum, byvec, valvec)
 expected_result = Dict("grpA" => 11, "grpB" => 3, "grpC" => 7)
 @test Dict(a=>b for (a,b) in zip(grpsum...)) == expected_result
 
+# fastby! Bool
+byvec = rand(Bool, 1_000_000)
+valvec = rand(1_000_000)
+x = fastby!(sum, byvec, valvec)
+y = countmap(byvec, weights(valvec))
+@test length(Dict(zip(x...)))  == length(y) && [Dict(zip(x...))[k] ≈ y[k] for k = keys(y)] |> all
 
 # fastby Bool
-if false
-    # TODO fix this!
-    byvec = rand(Bool, 1_000_000)
-    valvec = rand(1_000_000)
-    x = fastby!(sum, byvec, valvec)
-    y = countmap(byvec, weights(valvec))
-    @test length(x)  == length(y) && [x[k] ≈ y[k] for k = keys(x)] |> all
-end
+byvec = rand(Bool, 1_000_000)
+valvec = rand(1_000_000)
+x = fastby(sum, byvec, valvec)
+y = countmap(byvec, weights(valvec))
+@test length(Dict(zip(x...)))  == length(y) && [Dict(zip(x...))[k] ≈ y[k] for k = keys(y)] |> all
+
 
 # sumby vs DataFrames.aggregate
 Random.seed!(1);
