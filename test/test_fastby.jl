@@ -1,5 +1,5 @@
 using Revise
-using FastGroupBy, BenchmarkTools
+using FastGroupBy, BenchmarkTools, Random
 
 using DataFrames, CSV
 
@@ -35,40 +35,36 @@ g(fmq4) = aggregate(fmq4[:,[:V20,:V5]], :V20, mean)
 
 
 const M=100_000_000; const K=100;
-srand(1);
+Random.setseed!(1);
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 # using FastGroupBy.radixsort! to sort strings of length 8
 y = repeat([1], inner=length(svec1));
 @time a = fastby!(sum, svec1, y);
 
 using StatsBase
-srand(1);
+Random.setseed!(1);
 svec1 = rand([string(rand(Char.(32:126), rand(1:8))...) for k in 1:M÷K], M);
 @time b = countmap(svec1, alg = :dict);
 [a[k]≈ b[k] for k in keys(a)] |> all
 
-srand(1);
+Random.setseed!(1);
 x = rand(Bool, 100_000_000);
 y = rand(100_000_000);
 
 @time fastby!(sum, x, y)
 
 
-srand(1);
+Random.setseed!(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time a = fastby!(sum,x,y);
 
-srand(1);
+Random.setseed!(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time a = fastby_check_sorted!(sum,x,y);
 
-@code_warntype
-@code_warntype
-
-
-srand(1);
+Random.setseed!(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time b = sumby_radixsort!(x,y);
@@ -80,14 +76,14 @@ y = rand(100_000_000);
 @time ac = countmap(x, weights(y));
 [a[k] ≈ ac[k] for k in keys(a)] |> all
 
-srand(1);
+Random.setseed!(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time a = fastby!(x,y) do yy
     mean(yy)
 end;
 
-srand(1);
+Random.setseed!(1);
 x = rand(1:1_000_000, 100_000_000);
 y = rand(100_000_000);
 @time a = fastby!(yy -> sizeof.(yy), x, y);
@@ -105,7 +101,7 @@ end;
     grouped_y[end] - grouped_y[1]
 end;
 
-# srand(1)
+# Random.setseed!(1)
 # x = rand(1:1_000_000, 100_000_000)
 # y = rand(100_000_000)
 # @time a = sumby_radixsort(x,y)
@@ -137,25 +133,25 @@ end;
 #     @elapsed b = sumby_radixsort(x,y)
 # end
 
-# srand(1)
+# Random.setseed!(1)
 # aa = [abc() for i = 1:5]
 
-# srand(1)
+# Random.setseed!(1)
 # bb = [def() for i =1:5]
 
-# srand(1)
+# Random.setseed!(1)
 # c = [abc1() for i =1:5]
 
 # aa |> mean
 # bb |> mean
 # c |> mean
 
-# srand(1)
+# Random.setseed!(1)
 # x = rand(1:1_000_000, 100_000_000)
 # y = rand(100_000_000)
 # @time a = _fastby!(x,y, sum)
 
-# srand(1)
+# Random.setseed!(1)
 # x = rand(1:1_000_000, 100_000_000)
 # y = rand(100_000_000)
 # @time b = sumby_radixsort(x,y)
@@ -164,13 +160,13 @@ end;
 
 # @code_warntype _fastby!(x,y, sum, Float64)
 
-# srand(1)
+# Random.setseed!(1)
 # function hihi()
 #     x = rand(1:1_000_000, 100_000_000)
 #     y = rand(100_000_000)
 #     @elapsed a = _fastby!(x,y, [sum, mean])
 # end
 
-# srand(1)
+# Random.setseed!(1)
 # hi = [hihi() for i =1:5]
 # mean(hi)
