@@ -1,5 +1,6 @@
 using SortingAlgorithms
 
+# Fast by for multiple function
 function fastby(fns::NTuple{N, Function}, byvec::CategoricalVector, valvec::Tuple) where N
     # TODO generalize for categorical
     # TODO can just copy the code from fastby
@@ -152,11 +153,13 @@ end
 #     res
 # end
 
-function fastby!(fn::Function,
-    byvec::Union{PooledArray{pooltype, indextype}, CategoricalVector{pooltype, indextype}},
-    # byvec::CategoricalVector{pooltype, indextype},
+function fastby!(
+    fn::Function,
+    byvec::T,
     valvec::AbstractVector{S}
-    ) where {S, pooltype, indextype}
+) where {S, T <: Union{PooledArray, CategoricalVector}}
+
+    println("woohooo")
     l = length(byvec.pool)
 
     W = valvec[1:1] |> fn |> typeof
@@ -171,16 +174,16 @@ function fastby!(fn::Function,
     # number of unique groups in the result
     ngrps = sum(counter .!= zero(UInt))
 
+    # Start: Perform counting sort
     lbyvec = length(byvec)
     r1 = byvec.refs[lbyvec]
 
-    # check for degenerate case where there is only set of values
+    # check for degenerate case where there is only sSet of values
     if counter[r1] == lbyvec
         return ([byvec[1]], [fn(valvec)])
     end
 
-    uzero = zero(UInt)
-    nonzeropos = fcollect(l)[counter .!= uzero]
+    nonzeropos = fcollect(l)[counter .!= 0]
 
     counter = cumsum(counter)
     rangelo = vcat(0, counter[1:end-1]) .+ 1
@@ -198,18 +201,16 @@ function fastby!(fn::Function,
         simvalvec[ci] = valvec[i]
         counter[r1] -= 1
     end
+    # Finish: Perform counting sort
 
     # the result group
     resgrp = copy(@view(byvec[1:ngrps]))
+    resval = Vector{W}(undef, ngrps)
 
-    tmpval = fn(valvec)
-    resval = fill(tmpval, ngrps)
-    i = 1
-    for nzpos in nonzeropos
-        resgrp.refs[i] = byvec.refs[nzpos]
+    for (i, nzpos) in enumerate(nonzeropos)
+        resgrp.refs[i] = nzpos
         (lo, hi) = (rangelo[nzpos], rangehi[nzpos])
         resval[i] = fn(simvalvec[lo:hi])
-        i += 1
     end
 
     return (resgrp, resval)

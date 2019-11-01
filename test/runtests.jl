@@ -17,19 +17,37 @@ byvec = CategoricalArray{String, 1}(rand(UInt32(1):UInt32(length(pools)), N), Ca
 valvec = rand(N);
 @time cmres = countmap(byvec, weights(valvec)); #76
 @time fnrs = fastby(sum, byvec, valvec); # 24
-#fnrsdict =
-zip(fnrs...) |> collect
 
-string.(fnrs[1]) |> unique
+fnrsdict = Dict(zip(fnrs[1], fnrs[2]))
 
 @test length(cmres) == length(fnrs[1])
 @test all([cmres[k] ≈ fnrsdict[k] for k in keys(cmres)])
 
-byvec = PooledArray(PooledArrays.RefArray(rand(UInt32(1):UInt32(length(pools)), N)), pools);
+byvec = PooledArray(String.(byvec));
 @time cmres = countmap(byvec, weights(valvec)); #38
 @time fnrs = fastby(sum, byvec, valvec); # 21
-@test length(cmres) == length(fnrs)
-@test all([cmres[k] ≈ fnrs[k] for k in keys(cmres)])
+
+fnrsdict = Dict(zip(fnrs[1], fnrs[2]))
+@test length(cmres) == length(fnrsdict)
+@test all([cmres[k] ≈ fnrsdict[k] for k in keys(cmres)])
+
+# test sum
+b = rand(1:1_000_000, 100_000_000)
+@time res = fastby(sum, b, [1 for i in 1:100_000_000])
+@time rescm = countmap(b)
+
+resdict = Dict(zip(res...))
+
+@test length(rescm) == length(resdict)
+@test all([rescm[k] == resdict[k] for k in keys(resdict)])
+
+# test mean
+@time res = fastby(mean, b, [1 for i in 1:100_000_000])
+
+resdict = Dict(zip(res...))
+
+@test 1_000_000 == length(resdict)
+@test all([1.0 == resdict[k] for k in keys(resdict)])
 
 
 # Basic sumby and fastby!
