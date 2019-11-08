@@ -33,6 +33,31 @@ end
 meanreduce(mean_so_far, new_value, i) = mean_so_far*(i-1)/i + new_value/i
 
 #############################################
+# Single groups tuple of fgroupreduce
+# Single fn
+# Single val
+# as long as grouptwo! is defined for byveccv then it's fine
+#############################################
+"""
+    fgroupreduce(fn, byvec, valvec, init)
+
+Group by `byvec` and apply `reduce(fn, valvec, init = init)` within each group
+of `byvec`
+"""
+fgroupreduce(fn, byvec::AbstractVector{T}, valvec::AbstractVector{Z},  init) where {T, Z} = begin
+    cm = Dict{T, typeof(fn(init, valvec[1]))}()
+    for (b, v) in zip(byvec, valvec)
+        index = ht_keyindex2!(cm, b)
+        if index > 0
+            @inbounds cm.vals[index] = fn(cm.vals[index], v)
+        else
+            @inbounds Base._setindex!(cm, fn(init, v), b, -index)
+        end
+    end
+    cm
+end
+
+#############################################
 # Multiple groups tuple of fgroupreduce
 # Single fn
 # Single val
@@ -94,13 +119,11 @@ function fgroupreduce!(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:F
         end
         i += 1
         upto += UInt(dp)
-        res[upto] = fn(res[upto], vali, i)
+        #res[upto] = fn(res[upto], vali, i)
+        res[upto] = fn(res[upto], vali)
     end
     @time (resby..., res)
 end
-
-fgroupreduce(fn::F, byveccv, val::Vector{Z}, v0 = zero(Z)) where {F<:Function, Z} =
-    fgroupreduce!(fn, tuple((copy(bv) for bv in byveccv)...), copy(val), v0)
 
 if false
     fn = +
@@ -223,53 +246,6 @@ end
 #     @time fgroupreduce((+,+,+), byveccv, val)
 # end
 
-#############################################
-# arbitray single
-# reduces to fgroupreduce! for multiple tuples but single value vec
-#############################################
-fgroupreduce!(fn::Function, byvec::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = fgroupreduce!(fn, (byvec,), val, v0)
-
-#############################################
-# 2 tuple of CategoricalArray fgroupreduce
-#############################################
-function fgroupreduce!(fn::F, byveccv::NTuple{2, CategoricalVector}, val::Vector{Z}, v0::T = (fn(val[1], val[1]))) where {F<:Function, Z, T}
-    bv1 = byveccv[1]
-    bv2 = byveccv[2]
-    l1 = length(bv1.pool)
-    l2 = length(bv2.pool)
-    lv = length(val)
-
-    # make a histogram of unique values
-    res = fill(v0, (l2, l1))
-    taken = BitArray{2}(l2, l1)
-    taken .= false
-    @inbounds for i = 1:lv
-        j,k = bv2.refs[i], bv1.refs[i]
-        res[j,k] = fn(res[j,k], val[i])
-        taken[j,k] = true
-    end
-
-    num_distinct = sum(taken)
-
-    outbv1 = copy(@view(bv1[1:num_distinct]))
-    outbv2 = copy(@view(bv2[1:num_distinct]))
-    outval = Vector{Z}(num_distinct)
-
-    distinct_encountered = 1
-    @inbounds for i=1:l1
-        for j=1:l2
-            if taken[j,i]
-                outbv1.refs[distinct_encountered] = i
-                outbv2.refs[distinct_encountered] = j
-                outval[distinct_encountered] = res[j,i]
-                distinct_encountered += 1
-            end
-        end
-    end
-
-    (outbv1, outbv2, outval)
-end
-
 ########################################
 # fgroupreduce for single categorical
 ########################################
@@ -304,18 +280,13 @@ function fgroupreduce!(fn::F, byveccv::CategoricalVector, val::Vector{Z}, v0::T 
     (outbyveccv, outval)
 end
 
-fgroupreduce(fn::Function, byveccv::AbstractVector, val::Vector{Z}, v0 = zero(Z)) where Z = begin
-    println("meh")
-    fgroupreduce!(fn, copy(byveccv), copy(val), v0)
-end
-
 ########################################
 # fgroupreduce for DataFrames
 ########################################
 
 # only one group by symbol
 fgroupreduce(fn, df::AbstractDataFrame, byveccv::Symbol, val::Symbol, v0 = zero(eltype(df[val]))) =
-    DataFrame(fgroupreduce(fn, df[byveccv], df[val], v0) |> collect, [byveccv, val])
+    DataFrame(fgroupreduce(fn, df[!, byveccv], df[!, val], v0) |> collect, [byveccv, val])
 
 # multiple group by symbol
 fgroupreduce(fn, df::AbstractDataFrame, bysyms::NTuple{N, Symbol}, val::Symbol) where N =

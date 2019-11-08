@@ -1,4 +1,4 @@
-using Revise
+# using Revise
 using FastGroupBy, StatsBase, DataFrames, Random
 # using SortingAlgorithms
 import DataFrames: DataFrame

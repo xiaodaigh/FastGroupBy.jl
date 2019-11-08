@@ -1,8 +1,21 @@
 using DataFrames:rename!
+
+"""
+    fastby(fn, b[, v])
+
+Group by `b` then apply `fn` to `v` once grouped. If `v` is not provided then
+`fn` is applied `b`
+"""
+fastby!(fn, b::AbstractVector) = begin
+    sort!(b, alg = RadixSort)
+    _contiguousby_rle(fn, b, b)
+end
+
+fastby(fn, b) = fastby!(fn, copy(b))
+
 """
 Fast Group By algorithm
 """
-
 fastby(fn::Function, byvec, valvec) =  length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
 
 # fastby(fn::Function, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
@@ -10,7 +23,7 @@ fastby(fn::Function, byvec, valvec) =  length(byvec) == length(valvec) == 0 ? th
 """
 group by for DataFrame API
 """
-fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df, bycol, bycol)
+fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df[!, bycol])
 
 function fastby(fn::Function, df::DF, bycol::Symbol, valcol::Symbol) where DF <: AbstractDataFrame
     res_vec = DataFrame(fastby!(fn, copy(df[!, bycol]), copy(df[!, valcol])))
