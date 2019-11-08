@@ -33,13 +33,15 @@ end
 function _contiguousby_rle(fn::Function, byvec::AbstractVector{T}, valvec::AbstractVector{S}) where {T, S}
     rleby = rle(byvec)
     lo = 1
-    hi = rleby[1][1]
-    @inbounds a = fill(fn(valvec[lo:hi]), length(rleby[1]))
+    hi = rleby[2][1]
+    @inbounds a = fill(fn(@view(valvec[lo:hi])), length(rleby[1]))
 
     for i in 2:length(rleby[1])
         lo = hi + 1
-        @inbounds hi = rleby[1][i]
+        @inbounds hi += rleby[2][i]
+        println(lo," : ", hi)
         @inbounds a[i] = fn(@view(valvec[lo:hi]))
+        # println(lo, hi)
     end
     rleby[1], a
 end
