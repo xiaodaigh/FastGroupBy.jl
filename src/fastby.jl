@@ -21,9 +21,15 @@ fastby(fn::Function, byvec, valvec) =  length(byvec) == length(valvec) == 0 ? th
 # fastby(fn::Function, byvec, valvec) = length(byvec) == length(valvec) == 0 ? throw(error("length of byvec and valvec can not be 0")) : fastby!(fn, copy(byvec), copy(valvec))
 
 """
-group by for DataFrame API
+    fast(fn, df, bycol; name = [])
+
 """
-fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol) = fastby(fn, df[!, bycol])
+fastby(fn::Function, df::AbstractDataFrame, bycol::Symbol; name = Symbol(string(fn)*string(bycol))) = begin
+    res = fastby(fn, df[!, bycol])
+
+    resdf = DataFrame(res)
+    rename!(resdf, :x1=>bycol, :x2=>name)
+end
 
 function fastby(fn::Function, df::DF, bycol::Symbol, valcol::Symbol) where DF <: AbstractDataFrame
     res_vec = DataFrame(fastby!(fn, copy(df[!, bycol]), copy(df[!, valcol])))
