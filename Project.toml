@@ -1,7 +1,7 @@
 name = "FastGroupBy"
 uuid = "e6aeac8e-85c6-520e-8612-effc59bc0f33"
 authors = ["Dai ZJ <zhuojia.dai@gmail.com>"]
-version = "0.2.2"
+version = "0.2.3"
 
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
@@ -15,9 +15,9 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 CategoricalArrays = "0.7"
-Compat = "2.2"
-DataFrames = "0.19"
-IndexedTables = "0.12.4"
+Compat = "2.2, 3.0"
+DataFrames = "0.19, 0.20"
+IndexedTables = "0.12"
 PooledArrays = "0.5"
 SortingAlgorithms = "0.3"
 SortingLab = "0.2"
