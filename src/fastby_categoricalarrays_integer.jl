@@ -159,7 +159,7 @@ function fastby!(
     valvec::AbstractVector{S}
 ) where {S, T <: Union{PooledArray, CategoricalVector}}
 
-    println("woohooo")
+    # println("woohooo")
     l = length(byvec.pool)
 
     W = valvec[1:1] |> fn |> typeof
