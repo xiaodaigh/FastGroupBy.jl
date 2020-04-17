@@ -14,7 +14,7 @@ SortingLab = "562c1548-17b8-5b69-83cf-d8aebec229f5"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
-CategoricalArrays = "0.7"
+CategoricalArrays = "0.7, 0.8"
 Compat = "2.2, 3.0"
 DataFrames = "0.19, 0.20"
 IndexedTables = "0.12"
