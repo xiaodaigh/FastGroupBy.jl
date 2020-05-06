@@ -16,7 +16,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 [compat]
 CategoricalArrays = "0.7"
 Compat = "2.2, 3.0"
-DataFrames = "0.19, 0.20"
+DataFrames = "0.19, 0.20, 0.21"
 IndexedTables = "0.12"
 PooledArrays = "0.5"
 SortingAlgorithms = "0.3"
