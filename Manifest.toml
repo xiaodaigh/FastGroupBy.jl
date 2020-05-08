@@ -99,7 +99,6 @@ uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.0"
 
 [[LibGit2]]
-deps = ["Printf"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 
 [[Libdl]]
@@ -131,6 +130,7 @@ git-tree-sha1 = "49ed4443e3a92d722d99c0fd03c72766b51ead68"
 uuid = "925886fa-5bf2-5e8e-b522-a9147a512338"
 version = "1.4.0"
 
+
 [[OrderedCollections]]
 git-tree-sha1 = "12ce190210d278e12644bcadf5b21cbdcf225cd3"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
@@ -142,8 +142,9 @@ git-tree-sha1 = "72c3451932513427caffbd8bab15643ad693804b"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "1.0.3"
 
+
 [[Pkg]]
-deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
+deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Test", "UUIDs"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [[PooledArrays]]
