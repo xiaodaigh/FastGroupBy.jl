@@ -1,3 +1,5 @@
+# This package is deprecated as the base DataFrames.jl group-by is plenty fast
+
 # FastGroupBy
 
 Faster algorithms for doing vector group-by. This package currently support faster group-bys where the group-by vector is of type `CategoricalVector` or `Vector{T}` for `T<:Union{Integer, Bool, String}`.
